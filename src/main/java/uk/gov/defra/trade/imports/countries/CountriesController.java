@@ -8,18 +8,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.defra.trade.imports.client.MdmService;
+import uk.gov.defra.trade.imports.client.MdmCountry;
 
 @Slf4j
 @RestController
 @AllArgsConstructor
 @RequestMapping("/countries")
 public class CountriesController {
-    
-    private final MdmCountriesService countriesService;
-    
-    @GetMapping()
-    @Timed("controller.getCountries.time")
-    public ResponseEntity<List<MdmCountry>> getCountries() {
-          return ResponseEntity.ok(countriesService.getCountries(null));
-    }
+
+  private final MdmService countriesService;
+
+  @GetMapping()
+  @Timed("controller.getCountries.time")
+  public ResponseEntity<List<MdmCountry>> getCountries() {
+    return ResponseEntity.ok(countriesService.getCountries(List.of("EU", "EFTA", "CTC")));
+  }
 }

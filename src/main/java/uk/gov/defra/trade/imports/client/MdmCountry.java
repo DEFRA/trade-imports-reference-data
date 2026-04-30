@@ -1,4 +1,4 @@
-package uk.gov.defra.trade.imports.countries;
+package uk.gov.defra.trade.imports.client;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
