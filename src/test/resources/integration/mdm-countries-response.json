@@ -1,0 +1,29 @@
+[
+  {
+    "id": "1",
+    "isoNumeric": 276,
+    "alpha2": "DE",
+    "alpha3": "DEU",
+    "name": "Germany",
+    "classifiers": ["EU"],
+    "internalClassifiers": []
+  },
+  {
+    "id": "2",
+    "isoNumeric": 752,
+    "alpha2": "SE",
+    "alpha3": "SWE",
+    "name": "Sweden",
+    "classifiers": ["EU", "EFTA"],
+    "internalClassifiers": []
+  },
+  {
+    "id": "3",
+    "isoNumeric": 250,
+    "alpha2": "FR",
+    "alpha3": "FRA",
+    "name": "France",
+    "classifiers": ["EU"],
+    "internalClassifiers": []
+  }
+]
