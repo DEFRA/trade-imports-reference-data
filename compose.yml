@@ -2,7 +2,7 @@ services:
   
   localstack:
     image: localstack/localstack:3.0.2
-    container_name: localstack
+    container_name: localstack-reference-data
     profiles: [ 'infra', 'services' ]
     ports:
       - '4566:4566'
@@ -25,39 +25,6 @@ services:
     networks:
       - trade-imports-tenant
   
-  mongodb:
-    image: mongo:7.0
-    container_name: mongodb
-    profiles: ['infra', 'services']
-    restart: always
-    ports:
-      - '27017:27017'
-    volumes:
-      - mongodb-data:/data/db
-    healthcheck:
-      test: ['CMD', 'mongosh', '--eval', 'db.adminCommand("ping")']
-      interval: 5s
-      start_period: 10s
-      retries: 3
-    networks:
-      - trade-imports-tenant
-
-  redis:
-    image: redis:7.2.3-alpine3.18
-    container_name: redis
-    profiles: ['infra', 'services']
-    ports:
-      - '6379:6379'
-    restart: always
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 5s
-    networks:
-      - trade-imports-tenant
-  
   trade-imports-reference-data:
     container_name: trade-imports-reference-data
     profiles: [ 'services' ]
@@ -67,16 +34,14 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
-      mongodb:
-        condition: service_healthy
     env_file:
       - './compose/aws.env'
     ports:
-      - '8085:8085'
-      - '5005:5005' # Java debug port
+      - '8086:8086'
+      - '5006:5005' # Java debug port
     environment:
       # Server
-      PORT: 8085
+      PORT: 8086
 
       # Service Identity
       SERVICE_VERSION: 0.0.0-local
@@ -111,7 +76,6 @@ services:
 
 volumes:
   localstack-data:
-  mongodb-data:
 
 networks:
   trade-imports-tenant:
