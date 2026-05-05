@@ -99,7 +99,7 @@ management:
 # Trade auth api configuration
 trade-auth:
   api:
-    url: ${TRADE_PLATFORM_AUTH_URL:http://localhost:3002/tenant/oauth2/v2.0/token}
+    url: ${TRADE_PLATFORM_AUTH_URL:http://localhost:8087/tenant/oauth2/v2.0/token}
   client-id: ${TRADE_PLATFORM_CLIENT_ID:test}
   client-secret: ${TRADE_PLATFORM_CLIENT_SECRET:test_value}
   scope: ${TRADE_PLATFORM_SCOPE:default}
@@ -108,7 +108,7 @@ trade-auth:
 
 # MDM api configuration
 mdm-service:
-  url: ${MDM_SERVICE_URL:http://localhost:4065}
+  url: ${MDM_SERVICE_URL:http://localhost:8087}
   ocpApimSubscriptionKey: ${TRADE_PLATFORM_SUBSCRIPTION_KEY:test}
   connectionTimeout: 3000
   readTimeout: 3000
