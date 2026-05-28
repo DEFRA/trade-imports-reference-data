@@ -19,7 +19,7 @@ public class MdmService {
   private final MdmClient mdmClient;
   private final MdmConfiguration mdmConfiguration;
 
-  @Cacheable("MDM_COUNTRIES_CACHE")
+  @Cacheable(value = "MDM_COUNTRIES_CACHE", unless = "#result == null || #result.isEmpty()")
   public List<MdmCountry> getCountries(List<String> classifiers) {
 
     String ocpApimSubscriptionKey = mdmConfiguration.ocpApimSubscriptionKey;

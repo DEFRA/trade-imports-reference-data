@@ -2,9 +2,11 @@ package uk.gov.defra.trade.imports.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockserver.matchers.Times;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -67,6 +69,31 @@ class CountriesControllerIT extends IntegrationBase {
     usingStub().verify(
         request().withMethod("GET").withPath("/mdm-service/mdm/geo/countries"),
         VerificationTimes.exactly(1)
+    );
+  }
+
+  @Test
+  void getCountries_doesNotCacheEmptyMdmResponse() {
+    // Given: MDM returns empty list on first call, real data on second
+    usingStub().when(
+        request().withMethod("GET").withPath("/mdm-service/mdm/geo/countries"),
+        Times.exactly(1)
+    ).respond(
+        response()
+            .withStatusCode(200)
+            .withHeader("x-ms-middleware-request-id", "trace-empty")
+            .withContentType(org.mockserver.model.MediaType.APPLICATION_JSON)
+            .withBody("[]")
+    );
+
+    // When: two consecutive requests
+    restTemplate.getForEntity("/countries", String.class);
+    restTemplate.getForEntity("/countries", String.class);
+
+    // Then: MDM was called twice — empty result was not cached
+    usingStub().verify(
+        request().withMethod("GET").withPath("/mdm-service/mdm/geo/countries"),
+        VerificationTimes.exactly(2)
     );
   }
 
