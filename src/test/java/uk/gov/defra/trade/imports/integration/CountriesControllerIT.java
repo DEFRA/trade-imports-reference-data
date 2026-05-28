@@ -56,8 +56,14 @@ class CountriesControllerIT extends IntegrationBase {
     ResponseEntity<String> response = restTemplate.getForEntity(
         "/countries?classifier=EU", String.class);
 
-    // Then: 200 OK — MDM was called (stub responds regardless of classifier param)
+    // Then: 200 OK and MDM received the classifier query param
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    usingStub().verify(
+        request().withMethod("GET")
+            .withPath("/mdm-service/mdm/geo/countries")
+            .withQueryStringParameter("classifier", "EU"),
+        VerificationTimes.exactly(1)
+    );
   }
 
   @Test
