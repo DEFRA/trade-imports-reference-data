@@ -1,11 +1,14 @@
 package uk.gov.defra.trade.imports.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockserver.model.HttpRequest.request;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -14,8 +17,12 @@ class CountriesControllerIT extends IntegrationBase {
   @Autowired
   private TestRestTemplate restTemplate;
 
+  @Autowired
+  private CacheManager cacheManager;
+
   @BeforeEach
   void stubServices() {
+    cacheManager.getCache("MDM_COUNTRIES_CACHE").clear();
     stubMdmCountriesResponse();
   }
 
@@ -49,5 +56,18 @@ class CountriesControllerIT extends IntegrationBase {
 
     // Then: 200 OK — MDM was called (stub responds regardless of classifier param)
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+  }
+
+  @Test
+  void getCountries_returnsCachedResult_onSecondCall() {
+    // When: same endpoint called twice
+    restTemplate.getForEntity("/countries", String.class);
+    restTemplate.getForEntity("/countries", String.class);
+
+    // Then: MDM was only called once — second response served from cache
+    usingStub().verify(
+        request().withMethod("GET").withPath("/mdm-service/mdm/geo/countries"),
+        VerificationTimes.exactly(1)
+    );
   }
 }

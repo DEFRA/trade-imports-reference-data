@@ -1,5 +1,6 @@
 package uk.gov.defra.trade.imports.configuration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -16,6 +17,7 @@ class CacheConfigTest {
     @BeforeEach
     void setUp() {
         cacheConfigUnderTest = new CacheConfig();
+        cacheConfigUnderTest.mdmCacheTtlMinutes = 60L;
     }
 
     @Test
@@ -39,8 +41,8 @@ class CacheConfigTest {
 
         // Verify the results
         assertNotNull(result);
-        assertEquals(1, result.getCacheNames().size());
-        assertEquals(result.getCacheNames().stream().toList(), List.of("IDENTITY_TOKEN_CACHE"));
+        assertEquals(2, result.getCacheNames().size());
+        assertThat(result.getCacheNames()).containsExactlyInAnyOrder("IDENTITY_TOKEN_CACHE", "MDM_COUNTRIES_CACHE");
         assertEquals("jwtToken", result.getCache("IDENTITY_TOKEN_CACHE").get("CACHE_KEY").get());
     }
 }

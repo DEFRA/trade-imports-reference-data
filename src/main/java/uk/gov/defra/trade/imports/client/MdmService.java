@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
@@ -18,6 +19,7 @@ public class MdmService {
   private final MdmClient mdmClient;
   private final MdmConfiguration mdmConfiguration;
 
+  @Cacheable("MDM_COUNTRIES_CACHE")
   public List<MdmCountry> getCountries(List<String> classifiers) {
 
     String ocpApimSubscriptionKey = mdmConfiguration.ocpApimSubscriptionKey;

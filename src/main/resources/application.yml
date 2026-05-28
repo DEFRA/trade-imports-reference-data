@@ -2,6 +2,10 @@ server:
   port: ${PORT:8086}
   shutdown: graceful
 
+cache:
+  mdm:
+    ttl-minutes: ${CACHE_MDM_TTL_MINUTES:60}
+
 spring:
   application:
     name: trade-imports-reference-data
