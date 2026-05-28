@@ -1,7 +1,6 @@
 package uk.gov.defra.trade.imports.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
@@ -93,12 +92,15 @@ class MdmServiceTest {
   }
 
   @Test
-  void getCountries_throwsNullPointerException_whenMdmTraceHeaderIsAbsent() {
+  void getCountries_stillReturnsCountries_whenMdmTraceHeaderIsAbsent() {
     // Given: response has no x-ms-middleware-request-id header
-    when(mdmClient.getCountries(any(), any(), any())).thenReturn(ResponseEntity.ok(List.of()));
+    List<MdmCountry> expected = List.of(
+        MdmCountry.builder().alpha2("GB").name("United Kingdom").build()
+    );
+    when(mdmClient.getCountries(any(), any(), any())).thenReturn(ResponseEntity.ok(expected));
 
-    // When / Then: Objects.requireNonNull throws when the header is missing
-    assertThatThrownBy(() -> mdmService.getCountries(List.of("EU")))
-        .isInstanceOf(NullPointerException.class);
+    // When / Then: missing trace header is logged as a warning; countries are still returned
+    List<MdmCountry> result = mdmService.getCountries(List.of("EU"));
+    assertThat(result).isSameAs(expected);
   }
 }
