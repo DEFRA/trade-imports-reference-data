@@ -59,6 +59,18 @@ class CountriesControllerIT extends IntegrationBase {
   }
 
   @Test
+  void getCountries_callsMdm_onFirstRequestAfterCacheClear() {
+    // When: single request on a cold cache (cleared in @BeforeEach)
+    restTemplate.getForEntity("/countries", String.class);
+
+    // Then: MDM was called exactly once — AC3: cache miss triggers MDM fetch
+    usingStub().verify(
+        request().withMethod("GET").withPath("/mdm-service/mdm/geo/countries"),
+        VerificationTimes.exactly(1)
+    );
+  }
+
+  @Test
   void getCountries_returnsCachedResult_onSecondCall() {
     // When: same endpoint called twice
     restTemplate.getForEntity("/countries", String.class);
