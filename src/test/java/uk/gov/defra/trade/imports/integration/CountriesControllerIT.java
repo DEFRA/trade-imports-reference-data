@@ -108,6 +108,20 @@ class CountriesControllerIT extends IntegrationBase {
   }
 
   @Test
+  void getCountries_cachesResultsIndependently_perUniqueClassifier() {
+    // When: two requests with different classifiers, then the first classifier repeated
+    restTemplate.getForEntity("/countries?classifier=EU", String.class);
+    restTemplate.getForEntity("/countries?classifier=ANIMALS", String.class);
+    restTemplate.getForEntity("/countries?classifier=EU", String.class);
+
+    // Then: MDM called once per unique classifier — repeated classifier is a cache hit
+    usingStub().verify(
+        request().withMethod("GET").withPath("/mdm-service/mdm/geo/countries"),
+        VerificationTimes.exactly(2)
+    );
+  }
+
+  @Test
   void getCountries_returnsCachedResult_onSecondCall() {
     // When: same endpoint called twice
     restTemplate.getForEntity("/countries", String.class);
