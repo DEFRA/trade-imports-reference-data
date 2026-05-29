@@ -6,6 +6,7 @@ import static org.mockserver.model.HttpResponse.response;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockserver.matchers.TimeToLive;
 import org.mockserver.matchers.Times;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,10 +81,13 @@ class CountriesControllerIT extends IntegrationBase {
 
   @Test
   void getCountries_doesNotCacheEmptyMdmResponse() {
-    // Given: MDM returns empty list on first call, real data on second
+    // Given: MDM returns empty list on first call, real data on second.
+    // Higher priority (10 > default 0) ensures this stub wins over the @BeforeEach stub (FIFO ordering).
     usingStub().when(
         request().withMethod("GET").withPath("/mdm-service/mdm/geo/countries"),
-        Times.exactly(1)
+        Times.exactly(1),
+        TimeToLive.unlimited(),
+        10
     ).respond(
         response()
             .withStatusCode(200)
