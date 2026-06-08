@@ -14,24 +14,35 @@ import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
 public class MdmService {
 
   private static final String MDM_API_TRACE_ID_KEY = "x-ms-middleware-request-id";
+  private static final String SYSTEM = "GBNAG";
 
   private final MdmClient mdmClient;
   private final MdmConfiguration mdmConfiguration;
 
   @Cacheable(value = "MDM_COUNTRIES_CACHE", unless = "#result == null || #result.isEmpty()")
-  public List<MdmCountry> getCountries(List<String> classifiers) {
-
-    String ocpApimSubscriptionKey = mdmConfiguration.ocpApimSubscriptionKey;
-
-    String classifiersParam = classifiers != null && !classifiers.isEmpty()
-        ? String.join(",", classifiers)
-        : null;
+  public List<MdmCountry> getCountries(String blocks) {
+    String ocpApimSubscriptionKey = mdmConfiguration.getOcpApimSubscriptionKey();
 
     ResponseEntity<List<MdmCountry>> responseEntity =
-        mdmClient.getCountries(ocpApimSubscriptionKey, null, classifiersParam);
+        mdmClient.getCountries(ocpApimSubscriptionKey, SYSTEM, blocks);
     logTraceId(responseEntity);
 
-    return responseEntity.getBody();
+    List<MdmCountry> body = responseEntity.getBody();
+    if (body == null) {
+      log.warn("MDM returned a null body for countries request");
+      return List.of();
+    }
+    return body.stream()
+        .filter(c -> !"GB".equals(c.getEffectiveAlpha2()))
+        .filter(c -> isIncludedInRequestedBlock(c, blocks))
+        .toList();
+  }
+
+  private boolean isIncludedInRequestedBlock(MdmCountry country, String requestedBlock) {
+    if (requestedBlock == null || country.getBlocks() == null) return true;
+    return country.getBlocks().stream()
+        .anyMatch(b -> requestedBlock.equals(b.getName())
+                 && Boolean.TRUE.equals(b.getIncludeCountry()));
   }
 
   private void logTraceId(ResponseEntity<?> responseEntity) {

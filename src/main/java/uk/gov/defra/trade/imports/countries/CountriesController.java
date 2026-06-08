@@ -23,8 +23,8 @@ public class CountriesController {
   @GetMapping()
   @Timed("controller.getCountries.time")
   public ResponseEntity<List<Country>> getCountries(
-      @RequestParam(required = false, value = "classifier") List<String> classifiers) {
-    List<Country> countries = countriesService.getCountries(classifiers)
+      @RequestParam(required = false, value = "blocks") String blocks) {
+    List<Country> countries = countriesService.getCountries(blocks)
         .stream()
         .map(Country::new)
         .sorted(Comparator.comparing(Country::getName))

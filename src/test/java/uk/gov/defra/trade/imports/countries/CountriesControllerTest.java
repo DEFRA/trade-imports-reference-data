@@ -26,16 +26,15 @@ class CountriesControllerTest {
   @Test
   void getCountries_sortsMdmResponseAlphabeticallyByName() {
     // Given: MDM returns countries in non-alphabetical order
-    List<String> classifiers = List.of("EU", "EFTA", "CTC");
     List<MdmCountry> unsortedCountries = List.of(
-        MdmCountry.builder().alpha2("SE").name("Sweden").build(),
-        MdmCountry.builder().alpha2("AT").name("Austria").build(),
-        MdmCountry.builder().alpha2("FR").name("France").build()
+        MdmCountry.builder().effectiveAlpha2("SE").effectiveAlias("Sweden").build(),
+        MdmCountry.builder().effectiveAlpha2("AT").effectiveAlias("Austria").build(),
+        MdmCountry.builder().effectiveAlpha2("FR").effectiveAlias("France").build()
     );
-    when(mdmService.getCountries(classifiers)).thenReturn(unsortedCountries);
+    when(mdmService.getCountries("GBNAG_SPS_EX")).thenReturn(unsortedCountries);
 
     // When
-    ResponseEntity<List<Country>> response = controller.getCountries(classifiers);
+    ResponseEntity<List<Country>> response = controller.getCountries("GBNAG_SPS_EX");
 
     // Then: countries are returned in alphabetical order by name
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -46,24 +45,19 @@ class CountriesControllerTest {
   @Test
   void getCountries_mapsMdmCountryFieldsToCountry() {
     // Given
-    List<String> classifiers = List.of("EU");
     MdmCountry mdmCountry = MdmCountry.builder()
-        .alpha2("DE")
-        .name("Germany")
-        .classifiers(List.of("EU"))
-        .internalClassifiers(List.of("INTERNAL_1"))
+        .effectiveAlpha2("DE")
+        .effectiveAlias("Germany")
         .build();
-    when(mdmService.getCountries(classifiers)).thenReturn(List.of(mdmCountry));
+    when(mdmService.getCountries("GBNAG_SPS_EX")).thenReturn(List.of(mdmCountry));
 
     // When
-    ResponseEntity<List<Country>> response = controller.getCountries(classifiers);
+    ResponseEntity<List<Country>> response = controller.getCountries("GBNAG_SPS_EX");
 
     // Then
     Country country = response.getBody().get(0);
     assertThat(country.getCode()).isEqualTo("DE");
     assertThat(country.getName()).isEqualTo("Germany");
-    assertThat(country.getClassifiers()).containsExactly("EU");
-    assertThat(country.getInternalClassifiers()).containsExactly("INTERNAL_1");
   }
 
   @Test

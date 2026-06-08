@@ -12,10 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MdmCountry {
 
-  private String id;
-  private Integer isoNumeric;
-  private String alpha2;
-  private String alpha3;
   private String longName;
   private String name;
   private Boolean independent;
@@ -29,7 +25,5 @@ public class MdmCountry {
   private String effectiveAlpha2;
   private String effectiveAlpha3;
   private String effectiveLongName;
-  private List<String> classifiers;
-  private List<String> internalClassifiers;
+  private List<MdmBlock> blocks;
 }
-

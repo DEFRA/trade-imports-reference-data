@@ -1,29 +1,55 @@
 [
   {
-    "id": "1",
-    "isoNumeric": 276,
-    "alpha2": "DE",
-    "alpha3": "DEU",
-    "name": "Germany",
-    "classifiers": ["EU"],
-    "internalClassifiers": []
-  },
-  {
-    "id": "2",
-    "isoNumeric": 752,
-    "alpha2": "SE",
-    "alpha3": "SWE",
-    "name": "Sweden",
-    "classifiers": ["EU", "EFTA"],
-    "internalClassifiers": []
-  },
-  {
-    "id": "3",
-    "isoNumeric": 250,
-    "alpha2": "FR",
-    "alpha3": "FRA",
     "name": "France",
-    "classifiers": ["EU"],
-    "internalClassifiers": []
+    "effectiveAlpha2": "FR",
+    "effectiveAlpha3": "FRA",
+    "effectiveLongName": "the French Republic",
+    "effectiveAlias": "France",
+    "independent": true,
+    "statusName": "officially-assigned",
+    "system": "gbnag",
+    "blocks": [
+      { "name": "GBNAG_SPS_EX", "includeCountry": true, "tags": [] }
+    ]
+  },
+  {
+    "name": "Germany",
+    "effectiveAlpha2": "DE",
+    "effectiveAlpha3": "DEU",
+    "effectiveLongName": "the Federal Republic of Germany",
+    "effectiveAlias": "Germany",
+    "independent": true,
+    "statusName": "officially-assigned",
+    "system": "gbnag",
+    "blocks": [
+      { "name": "GBNAG_SPS_EX", "includeCountry": true, "tags": [] }
+    ]
+  },
+  {
+    "name": "United Kingdom of Great Britain and Northern Ireland (the)",
+    "effectiveAlpha2": "GB",
+    "effectiveAlpha3": "GBR",
+    "effectiveLongName": "the United Kingdom of Great Britain and Northern Ireland",
+    "effectiveAlias": "United Kingdom",
+    "independent": true,
+    "statusName": "officially-assigned",
+    "system": "gbnag",
+    "blocks": [
+      { "name": "GBNAG_SPS_EX", "includeCountry": true, "tags": [] }
+    ]
+  },
+  {
+    "name": "Martinique",
+    "effectiveAlpha2": "MQ",
+    "effectiveAlpha3": "MTQ",
+    "effectiveLongName": null,
+    "effectiveAlias": "Martinique",
+    "independent": false,
+    "statusName": "officially-assigned",
+    "system": "gbnag",
+    "blocks": [
+      { "name": "OMR", "includeCountry": true, "tags": [] },
+      { "name": "GBNAG_SPS_EX", "includeCountry": false, "tags": [] }
+    ]
   }
 ]

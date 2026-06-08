@@ -31,12 +31,20 @@ class CountriesControllerIT extends IntegrationBase {
 
   @Test
   void getCountries_returnsSortedCountriesFromMdm() {
-    // When
-    ResponseEntity<String> response = restTemplate.getForEntity("/countries", String.class);
+    // When: request with blocks param — both France and Germany pass all filters
+    ResponseEntity<String> response = restTemplate.getForEntity(
+        "/countries?blocks=GBNAG_SPS_EX", String.class);
 
-    // Then: 200 OK with countries sorted alphabetically (France, Germany, Sweden)
+    // Then: 200 OK with France before Germany (alphabetical sort)
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).containsSubsequence("France", "Germany", "Sweden");
+    String body = response.getBody();
+    assertThat(body).contains("France");
+    assertThat(body).contains("Germany");
+    assertThat(body.indexOf("France")).isLessThan(body.indexOf("Germany"));
+    // UK is filtered out (effectiveAlpha2 = "GB")
+    assertThat(body).doesNotContain("\"GB\"");
+    // Martinique is filtered out (includeCountry=false for GBNAG_SPS_EX)
+    assertThat(body).doesNotContain("\"MQ\"");
   }
 
   @Test
@@ -44,27 +52,10 @@ class CountriesControllerIT extends IntegrationBase {
     // When
     ResponseEntity<String> response = restTemplate.getForEntity("/countries", String.class);
 
-    // Then: alpha2 mapped to code, other fields present
+    // Then: effectiveAlpha2 mapped to code, effectiveAlias mapped to name
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).contains("\"code\":\"DE\"");
     assertThat(response.getBody()).contains("\"name\":\"Germany\"");
-    assertThat(response.getBody()).contains("\"classifiers\":[\"EU\"]");
-  }
-
-  @Test
-  void getCountries_withClassifierParam_passesItToMdm() {
-    // When: request with specific classifier
-    ResponseEntity<String> response = restTemplate.getForEntity(
-        "/countries?classifier=EU", String.class);
-
-    // Then: 200 OK and MDM received the classifier query param
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    usingStub().verify(
-        request().withMethod("GET")
-            .withPath("/mdm-service/mdm/geo/countries")
-            .withQueryStringParameter("classifier", "EU"),
-        VerificationTimes.exactly(1)
-    );
   }
 
   @Test
@@ -108,13 +99,13 @@ class CountriesControllerIT extends IntegrationBase {
   }
 
   @Test
-  void getCountries_cachesResultsIndependently_perUniqueClassifier() {
-    // When: two requests with different classifiers, then the first classifier repeated
-    restTemplate.getForEntity("/countries?classifier=EU", String.class);
-    restTemplate.getForEntity("/countries?classifier=ANIMALS", String.class);
-    restTemplate.getForEntity("/countries?classifier=EU", String.class);
+  void getCountries_cachesResultsIndependently_perUniqueBlocksParam() {
+    // When: two requests with different blocks params, then the first repeated
+    restTemplate.getForEntity("/countries?blocks=GBNAG_SPS_EX", String.class);
+    restTemplate.getForEntity("/countries?blocks=GBNAG_PHYTO_EX", String.class);
+    restTemplate.getForEntity("/countries?blocks=GBNAG_SPS_EX", String.class);
 
-    // Then: MDM called once per unique classifier — repeated classifier is a cache hit
+    // Then: MDM called once per unique blocks value — repeated value is a cache hit
     usingStub().verify(
         request().withMethod("GET").withPath("/mdm-service/mdm/geo/countries"),
         VerificationTimes.exactly(2)
