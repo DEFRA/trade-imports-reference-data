@@ -25,7 +25,20 @@
     <jjwt.version>0.13.0</jjwt.version>
     <amazon.awssdk.version>2.40.2</amazon.awssdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <testcontainers.version>2.0.2</testcontainers.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainers.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <!-- Spring Boot Starters -->
@@ -169,7 +182,7 @@
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>mockserver</artifactId>
+      <artifactId>testcontainers-mockserver</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -181,19 +194,16 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
-      <version>1.20.4</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>mongodb</artifactId>
-      <version>1.20.4</version>
+      <artifactId>testcontainers-mongodb</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>1.20.4</version>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

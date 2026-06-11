@@ -9,32 +9,28 @@ Core delivery Java Spring Boot backend template.
 * [Dependabot](#dependabot)
 
 
-### Docker Compose
+### Local stack
 
-A Docker Compose template is in [compose.yml](compose.yml).
-
-A local environment with:
-
-- Localstack for AWS services (S3, SQS)
-- Redis
-- MongoDB
-- This service.
-- A commented out frontend example.
+The full local environment (MongoDB, Localstack, Redis, the stubs, and every
+trade-imports-animals service including this one) is the workspace stack in
+[DEFRA/trade-imports-animals-workspace](https://github.com/DEFRA/trade-imports-animals-workspace):
 
 ```bash
-docker compose --profile services up --build -d
+# from the workspace root
+./scripts/stack/run-stack.sh                  # full stack from published images
+./scripts/stack/run-stack.sh -e reference-data # everything except this service (run it from your IDE)
+./scripts/stack/stop-stack.sh                 # tear down and wipe volumes
 ```
-
-A more extensive setup is available in [github.com/DEFRA/cdp-local-environment](https://github.com/DEFRA/cdp-local-environment)
 
 ### MongoDB
 
 #### MongoDB via Docker
 
-Run infrastructure services (MongoDB, Localstack, Redis):
+Run the workspace stack's infrastructure tiers (MongoDB, Localstack, Redis):
 
 ```bash
-docker compose --profile infra up -d
+# from the workspace root
+./scripts/stack/run-stack.sh --profile database --profile infrastructure
 ```
 
 #### MongoDB locally
