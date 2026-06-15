@@ -56,7 +56,7 @@ abstract class IntegrationBase {
           "mockserver-" + MockServerClient.class.getPackage().getImplementationVersion()));
 
   static MongoDBContainer MONGO_CONTAINER = new MongoDBContainer(
-      DockerImageName.parse("mongo:7.0")).withExposedPorts(27017);
+      DockerImageName.parse("mongo:7.0")).withReplicaSet().withExposedPorts(27017);
 
   static {
     Startables.deepStart(
