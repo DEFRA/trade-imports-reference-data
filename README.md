@@ -11,7 +11,7 @@ Core delivery Java Spring Boot backend template.
 
 ### Local stack
 
-The full local environment (MongoDB, Localstack, Redis, the stubs, and every
+The full local environment (MongoDB, Floci, Redis, the stubs, and every
 trade-imports-animals service including this one) is the workspace stack in
 [DEFRA/trade-imports-animals-workspace](https://github.com/DEFRA/trade-imports-animals-workspace):
 
@@ -26,7 +26,7 @@ trade-imports-animals service including this one) is the workspace stack in
 
 #### MongoDB via Docker
 
-Run the workspace stack's infrastructure tiers (MongoDB, Localstack, Redis):
+Run the workspace stack's infrastructure tiers (MongoDB, Floci, Redis):
 
 ```bash
 # from the workspace root
