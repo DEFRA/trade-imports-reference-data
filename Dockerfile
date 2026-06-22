@@ -57,7 +57,40 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
 ################################################################################
-# Stage 3: Production
+# Stage 3: Dev-run (Maven source mount)
+# - Maven present; no pre-built JAR
+# - Mount src/ from host; docker/dev-run.sh recompiles on save and Spring Boot
+#   DevTools restarts the running context, so .java edits hot-reload with no
+#   image rebuild or container bounce
+# - Usage: make docker-compose-dev (reference-data variant)
+################################################################################
+FROM amazoncorretto:25-alpine AS dev-run
+
+WORKDIR /app
+
+# Maven + curl for healthcheck; bash for the dev-run entrypoint
+RUN apk add --no-cache maven curl bash
+
+# Pre-fetch dependencies (cached layer; invalidated only when pom.xml changes)
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Source is volume-mounted at runtime; copy here only so the image builds
+COPY src ./src
+
+# Hot-reload entrypoint: mtime-poll compile loop + `mvn spring-boot:run`
+COPY docker/dev-run.sh /usr/local/bin/dev-run.sh
+RUN chmod +x /usr/local/bin/dev-run.sh
+
+EXPOSE 8086
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+  CMD curl -f http://localhost:8086/health || exit 1
+
+CMD ["dev-run.sh"]
+
+################################################################################
+# Stage 4: Production
 # - Minimal runtime image
 # - Meets all CDP platform requirements
 ################################################################################
