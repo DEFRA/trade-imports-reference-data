@@ -39,6 +39,73 @@ class MdmServiceTest {
     return ResponseEntity.ok().headers(headers).body(body);
   }
 
+  private ResponseEntity<MdmPortsResponse> poeResponseWith(List<MdmPortOfEntry> ports) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(MDM_TRACE_HEADER, "trace-abc-123");
+    return ResponseEntity.ok().headers(headers).body(new MdmPortsResponse(ports));
+  }
+
+  @Test
+  void getPortsOfEntry_returnsBodyFromMdmResponse() {
+    List<MdmPortOfEntry> ports = List.of(
+        MdmPortOfEntry.builder().id("1").code("GBABE").name("Aberdeen").build()
+    );
+    when(mdmClient.getPorts(any(), any())).thenReturn(poeResponseWith(ports));
+
+    List<MdmPortOfEntry> result = mdmService.getPortsOfEntry();
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getCode()).isEqualTo("GBABE");
+    assertThat(result.get(0).getName()).isEqualTo("Aberdeen");
+  }
+
+  @Test
+  void getPortsOfEntry_returnsEmptyList_whenMdmBodyIsNull() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(MDM_TRACE_HEADER, "trace-null-body");
+    ResponseEntity<MdmPortsResponse> nullBodyResponse =
+        ResponseEntity.ok().headers(headers).body(null);
+    when(mdmClient.getPorts(any(), any())).thenReturn(nullBodyResponse);
+
+    List<MdmPortOfEntry> result = mdmService.getPortsOfEntry();
+
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void getPortsOfEntry_returnsEmptyList_whenResultIsNull() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(MDM_TRACE_HEADER, "trace-null-result");
+    ResponseEntity<MdmPortsResponse> nullResultResponse =
+        ResponseEntity.ok().headers(headers).body(new MdmPortsResponse(null));
+    when(mdmClient.getPorts(any(), any())).thenReturn(nullResultResponse);
+
+    List<MdmPortOfEntry> result = mdmService.getPortsOfEntry();
+
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void getPortsOfEntry_stillReturnsData_whenMdmTraceHeaderIsAbsent() {
+    List<MdmPortOfEntry> ports = List.of(
+        MdmPortOfEntry.builder().code("GBABE").name("Aberdeen").build()
+    );
+    when(mdmClient.getPorts(any(), any())).thenReturn(ResponseEntity.ok(new MdmPortsResponse(ports)));
+
+    List<MdmPortOfEntry> result = mdmService.getPortsOfEntry();
+
+    assertThat(result).hasSize(1);
+  }
+
+  @Test
+  void getPortsOfEntry_callsMdmWithGbnagSystem() {
+    when(mdmClient.getPorts(any(), any())).thenReturn(poeResponseWith(List.of()));
+
+    mdmService.getPortsOfEntry();
+
+    verify(mdmClient).getPorts(SUBSCRIPTION_KEY, "GBNAG");
+  }
+
   @Test
   void getCountries_returnsBodyFromMdmResponse() {
     // Given

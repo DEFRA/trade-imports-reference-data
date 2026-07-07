@@ -151,6 +151,23 @@ abstract class IntegrationBase {
         .orElseThrow();
   }
 
+  protected void stubMdmPortsResponse() {
+    usingStub()
+        .when(request().withMethod("POST").withPath("/trade-auth/token"))
+        .respond(response()
+            .withStatusCode(200)
+            .withContentType(org.mockserver.model.MediaType.APPLICATION_JSON)
+            .withBody("{\"access_token\":\"test-token\",\"expires_on\":9999999999999}"));
+
+    usingStub()
+        .when(request().withMethod("GET").withPath("/mdm-service/mdm/trade/bcp/poes"))
+        .respond(response()
+            .withStatusCode(200)
+            .withHeader("x-ms-middleware-request-id", "test-trace-id")
+            .withContentType(org.mockserver.model.MediaType.APPLICATION_JSON)
+            .withBody(getJsonFromFile("integration/mdm-poe-response.json")));
+  }
+
   protected void stubMdmCountriesResponse() {
     usingStub()
         .when(request().withMethod("POST").withPath("/trade-auth/token"))

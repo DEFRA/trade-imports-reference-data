@@ -41,8 +41,8 @@ class CacheConfigTest {
 
         // Verify the results
         assertNotNull(result);
-        assertEquals(2, result.getCacheNames().size());
-        assertThat(result.getCacheNames()).containsExactlyInAnyOrder("IDENTITY_TOKEN_CACHE", "MDM_COUNTRIES_CACHE");
+        assertEquals(3, result.getCacheNames().size());
+        assertThat(result.getCacheNames()).containsExactlyInAnyOrder("IDENTITY_TOKEN_CACHE", "MDM_COUNTRIES_CACHE", "MDM_POE_CACHE");
         assertEquals("jwtToken", result.getCache("IDENTITY_TOKEN_CACHE").get("CACHE_KEY").get());
     }
 }

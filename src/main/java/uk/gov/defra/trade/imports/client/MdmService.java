@@ -19,6 +19,19 @@ public class MdmService {
   private final MdmClient mdmClient;
   private final MdmConfiguration mdmConfiguration;
 
+  @Cacheable(value = "MDM_POE_CACHE", unless = "#result == null || #result.isEmpty()")
+  public List<MdmPortOfEntry> getPortsOfEntry() {
+    ResponseEntity<MdmPortsResponse> responseEntity =
+        mdmClient.getPorts(mdmConfiguration.getOcpApimSubscriptionKey(), SYSTEM);
+    logTraceId(responseEntity);
+    MdmPortsResponse body = responseEntity.getBody();
+    if (body == null || body.getResult() == null) {
+      log.warn("MDM returned a null body for ports-of-entry request");
+      return List.of();
+    }
+    return body.getResult();
+  }
+
   @Cacheable(value = "MDM_COUNTRIES_CACHE", unless = "#result == null || #result.isEmpty()")
   public List<MdmCountry> getCountries(String blocks) {
     String ocpApimSubscriptionKey = mdmConfiguration.getOcpApimSubscriptionKey();

@@ -34,6 +34,13 @@ public class CacheConfig {
                 .expireAfterWrite(mdmCacheTtlMinutes, TimeUnit.MINUTES)
                 .build()
         );
+        cacheManager.registerCustomCache(
+            "MDM_POE_CACHE",
+            Caffeine.newBuilder()
+                .maximumSize(20)
+                .expireAfterWrite(mdmCacheTtlMinutes, TimeUnit.MINUTES)
+                .build()
+        );
         return cacheManager;
     }
 }

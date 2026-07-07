@@ -1,0 +1,7 @@
+{
+  "result": [
+    { "id": "1", "code": "GBABE", "name": "Aberdeen" },
+    { "id": "2", "code": "GBEMA", "name": "East Midlands Airport" },
+    { "id": "3", "code": "GBEDI", "name": "Edinburgh" }
+  ]
+}

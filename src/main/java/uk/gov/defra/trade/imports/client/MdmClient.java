@@ -23,4 +23,10 @@ public interface MdmClient {
       @RequestParam(value = "system", required = false) String system,
       @RequestParam(value = "blocks", required = false) String blocks
   );
+
+  @GetMapping(value = "/mdm/trade/bcp/poes")
+  ResponseEntity<MdmPortsResponse> getPorts(
+      @RequestHeader(OCP_APIM_SUBSCRIPTION_KEY) String ocpApimSubscriptionKey,
+      @RequestParam(value = "system", required = false) String system
+  );
 }
