@@ -27,6 +27,8 @@ public class CacheConfig {
     public CacheManager cacheManager(Caffeine<Object, Object> caffeine) {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager("IDENTITY_TOKEN_CACHE");
         cacheManager.setCaffeine(caffeine);
+        // The primary purpose of caching MDM responses is to rate-limit our calls to MDM,
+        // rather than to defend against MDM unavailability or improve performance.
         cacheManager.registerCustomCache(
             "MDM_COUNTRIES_CACHE",
             Caffeine.newBuilder()
