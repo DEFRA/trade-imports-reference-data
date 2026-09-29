@@ -8,6 +8,16 @@
     "independent": true,
     "statusName": "officially-assigned",
     "system": "gbnag",
+    "subDivisions": [
+      {
+        "code": { "value": "FR-MQ" },
+        "name": "Martinique"
+      },
+      {
+        "code": { "value": "FR-GP" },
+        "name": "Guadeloupe"
+      }
+    ],
     "blocks": [
       { "name": "GBNAG_SPS_EX", "includeCountry": true, "tags": [] }
     ]
@@ -21,6 +31,26 @@
     "independent": true,
     "statusName": "officially-assigned",
     "system": "gbnag",
+    "subDivisions": [],
+    "blocks": [
+      { "name": "GBNAG_SPS_EX", "includeCountry": true, "tags": [] }
+    ]
+  },
+  {
+    "name": "Spain",
+    "effectiveAlpha2": "ES",
+    "effectiveAlpha3": "ESP",
+    "effectiveLongName": "the Kingdom of Spain",
+    "effectiveAlias": "Spain",
+    "independent": true,
+    "statusName": "officially-assigned",
+    "system": "gbnag",
+    "subDivisions": [
+      {
+        "code": { "value": "ES-CN" },
+        "name": "Canary Islands"
+      }
+    ],
     "blocks": [
       { "name": "GBNAG_SPS_EX", "includeCountry": true, "tags": [] }
     ]
@@ -34,22 +64,14 @@
     "independent": true,
     "statusName": "officially-assigned",
     "system": "gbnag",
+    "subDivisions": [
+      {
+        "code": { "value": "GB-NIR" },
+        "name": "Northern Ireland"
+      }
+    ],
     "blocks": [
       { "name": "GBNAG_SPS_EX", "includeCountry": true, "tags": [] }
-    ]
-  },
-  {
-    "name": "Martinique",
-    "effectiveAlpha2": "MQ",
-    "effectiveAlpha3": "MTQ",
-    "effectiveLongName": null,
-    "effectiveAlias": "Martinique",
-    "independent": false,
-    "statusName": "officially-assigned",
-    "system": "gbnag",
-    "blocks": [
-      { "name": "OMR", "includeCountry": true, "tags": [] },
-      { "name": "GBNAG_SPS_EX", "includeCountry": false, "tags": [] }
     ]
   }
 ]
