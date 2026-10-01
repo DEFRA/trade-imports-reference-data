@@ -41,10 +41,13 @@ class CountriesControllerIT extends IntegrationBase {
     assertThat(body).contains("France");
     assertThat(body).contains("Germany");
     assertThat(body.indexOf("France")).isLessThan(body.indexOf("Germany"));
-    // UK is filtered out (effectiveAlpha2 = "GB")
+    // UK is filtered out (effectiveAlpha2 = "GB"), so GB-NIR subdivisions go with it
     assertThat(body).doesNotContain("\"GB\"");
-    // Martinique is filtered out (includeCountry=false for GBNAG_SPS_EX)
-    assertThat(body).doesNotContain("\"MQ\"");
+    assertThat(body).doesNotContain("GB-NIR");
+    // France carries nested subdivisions from MDM
+    assertThat(body).contains("\"subDivisions\"");
+    assertThat(body).contains("Canary Islands");
+    assertThat(body).contains("\"code\":\"ES-CN\"");
   }
 
   @Test
