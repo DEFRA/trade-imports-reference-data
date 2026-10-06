@@ -12,12 +12,14 @@ import java.util.Objects;
  */
 public record ExternalCall(String dependency, String operation, String interfaceId) {
 
+  private static final String VOLUMETRICS_INTERFACE_ID = "SYN-19";
+
   public static final ExternalCall TRADE_TOKEN =
-      new ExternalCall("trade-token", "client-credentials-token", "SYN-19");
+      new ExternalCall("trade-token", "client-credentials-token", VOLUMETRICS_INTERFACE_ID);
   public static final ExternalCall MDM_GET_COUNTRIES =
-      new ExternalCall("mdm", "get-countries", "SYN-19");
+      new ExternalCall("mdm", "get-countries", VOLUMETRICS_INTERFACE_ID);
   public static final ExternalCall MDM_GET_PORTS_OF_ENTRY =
-      new ExternalCall("mdm", "get-ports-of-entry", "SYN-19");
+      new ExternalCall("mdm", "get-ports-of-entry", VOLUMETRICS_INTERFACE_ID);
 
   public ExternalCall {
     Objects.requireNonNull(dependency, "dependency must not be null");

@@ -70,9 +70,9 @@ class ExternalCallMetricsIT extends IntegrationBase {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     verify(externalCallMetrics)
-        .record(eq(ExternalCall.TRADE_TOKEN), any(Duration.class), eq(false));
+        .recordCall(eq(ExternalCall.TRADE_TOKEN), any(Duration.class), eq(false));
     verify(externalCallMetrics)
-        .record(eq(ExternalCall.MDM_GET_COUNTRIES), any(Duration.class), eq(false));
+        .recordCall(eq(ExternalCall.MDM_GET_COUNTRIES), any(Duration.class), eq(false));
   }
 
   @Test
@@ -88,7 +88,7 @@ class ExternalCallMetricsIT extends IntegrationBase {
 
     assertThat(response.getStatusCode()).isNotEqualTo(HttpStatus.OK);
     verify(externalCallMetrics)
-        .record(eq(ExternalCall.MDM_GET_COUNTRIES), any(Duration.class), eq(true));
+        .recordCall(eq(ExternalCall.MDM_GET_COUNTRIES), any(Duration.class), eq(true));
   }
 
   @Test
@@ -103,9 +103,9 @@ class ExternalCallMetricsIT extends IntegrationBase {
     restTemplate.getForEntity("/countries", String.class);
 
     verify(externalCallMetrics)
-        .record(eq(ExternalCall.TRADE_TOKEN), any(Duration.class), eq(true));
+        .recordCall(eq(ExternalCall.TRADE_TOKEN), any(Duration.class), eq(true));
     verify(externalCallMetrics, never())
-        .record(eq(ExternalCall.MDM_GET_COUNTRIES), any(), anyBoolean());
+        .recordCall(eq(ExternalCall.MDM_GET_COUNTRIES), any(), anyBoolean());
   }
 
   @Test
@@ -114,6 +114,6 @@ class ExternalCallMetricsIT extends IntegrationBase {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     verify(externalCallMetrics)
-        .record(eq(ExternalCall.MDM_GET_PORTS_OF_ENTRY), any(Duration.class), eq(false));
+        .recordCall(eq(ExternalCall.MDM_GET_PORTS_OF_ENTRY), any(Duration.class), eq(false));
   }
 }

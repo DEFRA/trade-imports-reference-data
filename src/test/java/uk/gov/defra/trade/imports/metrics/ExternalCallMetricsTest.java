@@ -52,7 +52,7 @@ class ExternalCallMetricsTest {
 
   @Test
   void record_shouldEmitTheDurationInMilliseconds() {
-    metrics.record(ExternalCall.MDM_GET_COUNTRIES, Duration.ofMillis(250), false);
+    metrics.recordCall(ExternalCall.MDM_GET_COUNTRIES, Duration.ofMillis(250), false);
 
     assertThat(environment.documents().getFirst().get("ExternalCallDuration").asDouble())
         .isEqualTo(250.0);
@@ -111,13 +111,13 @@ class ExternalCallMetricsTest {
         new ExternalCallMetrics(true, NAMESPACE, () -> new MetricsLogger(failingEnvironment));
 
     assertThatCode(
-            () -> failingMetrics.record(ExternalCall.TRADE_TOKEN, Duration.ofMillis(5), false))
+            () -> failingMetrics.recordCall(ExternalCall.TRADE_TOKEN, Duration.ofMillis(5), false))
         .doesNotThrowAnyException();
   }
 
   @Test
   void record_shouldEmitNoInterface_whenTheCallHasNone() {
-    metrics.record(new ExternalCall("discovery", "lookup", null), Duration.ofMillis(5), false);
+    metrics.recordCall(new ExternalCall("discovery", "lookup", null), Duration.ofMillis(5), false);
 
     assertThat(environment.documents().getFirst().has("Interface")).isFalse();
   }
@@ -134,7 +134,7 @@ class ExternalCallMetricsTest {
               return new MetricsLogger(environment);
             });
 
-    disabled.record(ExternalCall.TRADE_TOKEN, Duration.ofMillis(5), false);
+    disabled.recordCall(ExternalCall.TRADE_TOKEN, Duration.ofMillis(5), false);
 
     assertThat(environment.documents()).isEmpty();
     assertThat(suppliedLoggers).hasValue(0);
