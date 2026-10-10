@@ -1,7 +1,10 @@
 {
   "result": [
-    { "id": "1", "code": "GBABE", "name": "Aberdeen" },
-    { "id": "2", "code": "GBEMA", "name": "East Midlands Airport" },
-    { "id": "3", "code": "GBEDI", "name": "Edinburgh" }
+    { "id": "1", "code": "GB TIL", "name": "TILBURY", "traffic": "Port" },
+    { "id": "2", "code": "GB EMA", "name": "East Midlands Airport", "traffic": "Airport" },
+    { "id": "3", "code": "GB FOL", "name": "Folkestone", "traffic": "Rail" },
+    { "id": "4", "code": "GB ABD", "name": "Aberdeen Harbour", "traffic": "Port" },
+    { "id": "5", "code": "GB TEE", "name": "Teestort", "traffic": "Port" },
+    { "id": "6", "code": "GB DYC", "name": "Aberdeen Airport", "traffic": "Airport" }
   ]
 }

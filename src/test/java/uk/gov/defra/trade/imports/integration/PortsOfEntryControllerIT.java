@@ -14,6 +14,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import uk.gov.defra.trade.imports.portsofentry.PortOfEntry;
+import uk.gov.defra.trade.imports.portsofentry.PortType;
 
 class PortsOfEntryControllerIT extends IntegrationBase {
 
@@ -30,26 +32,25 @@ class PortsOfEntryControllerIT extends IntegrationBase {
   }
 
   @Test
-  void getPortsOfEntry_returnsSortedPortsFromMdm() {
-    ResponseEntity<String> response = restTemplate.getForEntity("/ports-of-entry", String.class);
+  void getPortsOfEntry_returnsAirportsThenSeaportsThenRail_eachAToZIgnoringCase() {
+    ResponseEntity<PortOfEntry[]> response = restTemplate.getForEntity("/ports-of-entry", PortOfEntry[].class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    String body = response.getBody();
-    assertThat(body).contains("Aberdeen");
-    assertThat(body).contains("East Midlands Airport");
-    assertThat(body).contains("Edinburgh");
-    // Aberdeen < East Midlands < Edinburgh alphabetically
-    assertThat(body.indexOf("Aberdeen")).isLessThan(body.indexOf("East Midlands Airport"));
-    assertThat(body.indexOf("East Midlands Airport")).isLessThan(body.indexOf("Edinburgh"));
+    assertThat(response.getBody()).extracting(PortOfEntry::getName)
+        .containsExactly("Aberdeen Airport", "East Midlands Airport", "Aberdeen Harbour", "Teestort", "TILBURY",
+            "Folkestone");
+    assertThat(response.getBody()).extracting(PortOfEntry::getType)
+        .containsExactly(PortType.AIRPORT, PortType.AIRPORT, PortType.SEAPORT, PortType.SEAPORT, PortType.SEAPORT,
+            PortType.RAIL);
   }
 
   @Test
-  void getPortsOfEntry_mapsPortFieldsCorrectly() {
+  void getPortsOfEntry_writesEachPortAsCodeNameAndType() {
     ResponseEntity<String> response = restTemplate.getForEntity("/ports-of-entry", String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).contains("\"code\":\"GBABE\"");
-    assertThat(response.getBody()).contains("\"name\":\"Aberdeen\"");
+    assertThat(response.getBody()).contains("{\"code\":\"GB ABD\",\"name\":\"Aberdeen Harbour\",\"type\":\"seaport\"}");
+    assertThat(response.getBody()).contains("{\"code\":\"GB FOL\",\"name\":\"Folkestone\",\"type\":\"rail\"}");
   }
 
   @Test
