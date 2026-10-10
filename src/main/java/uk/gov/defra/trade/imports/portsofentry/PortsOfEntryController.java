@@ -1,7 +1,6 @@
 package uk.gov.defra.trade.imports.portsofentry;
 
 import io.micrometer.core.annotation.Timed;
-import java.util.Comparator;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +24,7 @@ public class PortsOfEntryController {
     List<PortOfEntry> ports = mdmService.getPortsOfEntry()
         .stream()
         .map(PortOfEntry::new)
-        .sorted(Comparator.comparing(PortOfEntry::getName))
+        .sorted(PortListOrder.AIRPORTS_THEN_SEAPORTS_THEN_RAIL)
         .toList();
     return ResponseEntity.ok(ports);
   }
