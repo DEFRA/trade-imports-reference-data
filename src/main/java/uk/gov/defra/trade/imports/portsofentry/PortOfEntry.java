@@ -14,9 +14,11 @@ public class PortOfEntry {
 
   private String code;
   private String name;
+  private PortType type;
 
   public PortOfEntry(MdmPortOfEntry mdm) {
     this.code = mdm.getCode();
     this.name = mdm.getName();
+    this.type = PortType.fromTraffic(mdm.getTraffic()).orElse(null);
   }
 }
