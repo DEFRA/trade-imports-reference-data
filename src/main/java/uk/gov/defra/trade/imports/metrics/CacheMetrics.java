@@ -42,9 +42,9 @@ public class CacheMetrics {
             total.minus(lastPublished.getOrDefault(name, CacheStats.empty()));
         lastPublished.put(name, total);
         emfMetricWriter.write(
-            HIT_METRIC, sinceLastPublish.hitCount(), Unit.COUNT, CACHE_DIMENSION, name);
+            HIT_METRIC, (double) sinceLastPublish.hitCount(), Unit.COUNT, CACHE_DIMENSION, name);
         emfMetricWriter.write(
-            MISS_METRIC, sinceLastPublish.missCount(), Unit.COUNT, CACHE_DIMENSION, name);
+            MISS_METRIC, (double) sinceLastPublish.missCount(), Unit.COUNT, CACHE_DIMENSION, name);
       }
     }
   }
