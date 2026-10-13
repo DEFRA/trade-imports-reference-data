@@ -5,6 +5,14 @@
     { "id": "3", "code": "GB FOL", "name": "Folkestone", "traffic": "Rail" },
     { "id": "4", "code": "GB ABD", "name": "Aberdeen Harbour", "traffic": "Port" },
     { "id": "5", "code": "GB TEE", "name": "Teestort", "traffic": "Port" },
-    { "id": "6", "code": "GB DYC", "name": "Aberdeen Airport", "traffic": "Airport" }
+    { "id": "6", "code": "GB DYC", "name": "Aberdeen Airport", "traffic": "Airport" },
+    { "id": "7", "code": "GB PSQ", "name": "Portsmouth  Quay", "traffic": "Port" },
+    { "id": "8", "code": "GB PSP", "name": "Portsmouth Port", "traffic": "Port" },
+    { "id": "9", "code": "GB DOV", "name": "Port of Dover", "traffic": "Port" },
+    { "id": "10", "code": "GB TYN", "name": "Port of Tyne", "traffic": " port " },
+    { "id": "11", "code": "GBSHS", "name": "Port of Sheerness", "traffic": "Port" },
+    { "id": "12", "code": "GB SHS", "name": "Port of Sheerness", "traffic": "Port" },
+    { "id": "13", "code": "GB ZZA", "name": "Alpha Ferry Terminal", "traffic": "Ferry" },
+    { "id": "14", "code": "GB ZZB", "name": "Beta Quay", "traffic": null }
   ]
 }
