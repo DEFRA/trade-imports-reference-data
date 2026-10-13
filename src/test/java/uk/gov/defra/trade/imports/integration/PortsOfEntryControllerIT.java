@@ -32,16 +32,43 @@ class PortsOfEntryControllerIT extends IntegrationBase {
   }
 
   @Test
-  void getPortsOfEntry_returnsAirportsThenSeaportsThenRail_eachAToZIgnoringCase() {
+  void getPortsOfEntry_returnsAirportsThenSeaportsThenRailThenUnknown_eachAToZIgnoringCaseAndSpacing() {
+    // When
     ResponseEntity<PortOfEntry[]> response = restTemplate.getForEntity("/ports-of-entry", PortOfEntry[].class);
 
+    // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).extracting(PortOfEntry::getName)
-        .containsExactly("Aberdeen Airport", "East Midlands Airport", "Aberdeen Harbour", "Teestort", "TILBURY",
-            "Folkestone");
+        .containsExactly("Aberdeen Airport", "East Midlands Airport", "Aberdeen Harbour", "Port of Dover",
+            "Port of Sheerness", "Port of Sheerness", "Port of Tyne", "Portsmouth Port", "Portsmouth  Quay",
+            "Teestort", "TILBURY", "Folkestone", "Alpha Ferry Terminal", "Beta Quay");
     assertThat(response.getBody()).extracting(PortOfEntry::getType)
         .containsExactly(PortType.AIRPORT, PortType.AIRPORT, PortType.SEAPORT, PortType.SEAPORT, PortType.SEAPORT,
-            PortType.RAIL);
+            PortType.SEAPORT, PortType.SEAPORT, PortType.SEAPORT, PortType.SEAPORT, PortType.SEAPORT,
+            PortType.SEAPORT, PortType.RAIL, null, null);
+  }
+
+  @Test
+  void getPortsOfEntry_ordersPortsWithTheSameNameByCode() {
+    // When
+    ResponseEntity<PortOfEntry[]> response = restTemplate.getForEntity("/ports-of-entry", PortOfEntry[].class);
+
+    // Then
+    assertThat(response.getBody())
+        .filteredOn(port -> port.getName().equals("Port of Sheerness"))
+        .extracting(PortOfEntry::getCode)
+        .containsExactly("GB SHS", "GBSHS");
+  }
+
+  @Test
+  void getPortsOfEntry_writesAPortOfUnknownTypeWithANullType() {
+    // When
+    ResponseEntity<String> response = restTemplate.getForEntity("/ports-of-entry", String.class);
+
+    // Then
+    assertThat(response.getBody())
+        .contains("{\"code\":\"GB ZZA\",\"name\":\"Alpha Ferry Terminal\",\"type\":null}")
+        .contains("{\"code\":\"GB ZZB\",\"name\":\"Beta Quay\",\"type\":null}");
   }
 
   @Test
