@@ -34,6 +34,7 @@ public class CacheConfig {
             Caffeine.newBuilder()
                 .maximumSize(20)
                 .expireAfterWrite(mdmCacheTtlMinutes, TimeUnit.MINUTES)
+                .recordStats()
                 .build()
         );
         cacheManager.registerCustomCache(
@@ -41,6 +42,7 @@ public class CacheConfig {
             Caffeine.newBuilder()
                 .maximumSize(20)
                 .expireAfterWrite(mdmCacheTtlMinutes, TimeUnit.MINUTES)
+                .recordStats()
                 .build()
         );
         return cacheManager;

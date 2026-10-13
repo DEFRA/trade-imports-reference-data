@@ -1,6 +1,7 @@
 package uk.gov.defra.trade.imports.countries;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import uk.gov.defra.trade.imports.client.MdmCountry;
 import uk.gov.defra.trade.imports.client.MdmService;
 import uk.gov.defra.trade.imports.client.MdmSubDivision;
 import uk.gov.defra.trade.imports.countries.SubDivision;
+import uk.gov.defra.trade.imports.metrics.LookupMetrics;
 
 @ExtendWith(MockitoExtension.class)
 class CountriesControllerTest {
@@ -23,8 +25,20 @@ class CountriesControllerTest {
   @Mock
   private MdmService mdmService;
 
+  @Mock
+  private LookupMetrics lookupMetrics;
+
   @InjectMocks
   private CountriesController controller;
+
+  @Test
+  void getCountries_countsOneCountriesLookup() {
+    when(mdmService.getCountries(null)).thenReturn(List.of());
+
+    controller.getCountries(null);
+
+    verify(lookupMetrics).recordLookup("countries");
+  }
 
   @Test
   void getCountries_sortsMdmResponseAlphabeticallyByName() {
