@@ -27,7 +27,7 @@ import software.amazon.cloudwatchlogs.emf.model.Unit;
  *
  * <p>MongoDB is deliberately left out. The service has MongoDB configured, but nothing reads or
  * writes through it, so its availability says nothing about whether the service works. Removing
- * the unused configuration is tracked on a separate ticket.
+ * the unused configuration is tracked on EUDPA-705.
  */
 @Component
 @RequiredArgsConstructor
