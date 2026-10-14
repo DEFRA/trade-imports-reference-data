@@ -5,9 +5,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -24,15 +24,22 @@ class PortsOfEntryControllerTest {
   @Mock
   private LookupMetrics lookupMetrics;
 
-  @InjectMocks
   private PortsOfEntryController controller;
 
+  @BeforeEach
+  void setUp() {
+    controller = new PortsOfEntryController(mdmService, lookupMetrics);
+  }
+
   @Test
-  void getPortsOfEntry_countsOnePortsOfEntryLookup() {
+  void getPortsOfEntry_shouldCountOnePortsOfEntryLookup() {
+    // Given
     when(mdmService.getPortsOfEntry()).thenReturn(List.of());
 
+    // When
     ResponseEntity<List<PortOfEntry>> response = controller.getPortsOfEntry();
 
+    // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     verify(lookupMetrics).recordLookup("ports-of-entry");
   }
