@@ -157,7 +157,9 @@ class ExternalCallMetricsTest {
   void record_shouldLeaveNoEventFieldsBehindForLaterLogLines() {
     metrics.recordCall(ExternalCall.MDM_GET_COUNTRIES, Duration.ofMillis(5), false);
 
+    assertThat(MDC.get("event.category")).isNull();
     assertThat(MDC.get("event.action")).isNull();
+    assertThat(MDC.get("event.outcome")).isNull();
     assertThat(MDC.get("event.duration")).isNull();
   }
 
