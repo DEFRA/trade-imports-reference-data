@@ -49,13 +49,20 @@ class CacheConfigTest {
 
     @Test
     void mdmCaches_shouldRecordHitsAndMisses() {
+        // Given
         final CacheManager result = cacheConfigUnderTest.cacheManager(Caffeine.newBuilder());
 
-        for (String name : List.of("MDM_COUNTRIES_CACHE", "MDM_POE_CACHE")) {
+        for (String name : List.of(CacheConfig.MDM_COUNTRIES_CACHE, CacheConfig.MDM_POE_CACHE)) {
             CaffeineCache cache = (CaffeineCache) result.getCache(name);
-            cache.get("missing");
 
+            // When
+            cache.get("key");
+            cache.put("key", "value");
+            cache.get("key");
+
+            // Then
             assertThat(cache.getNativeCache().stats().missCount()).isEqualTo(1);
+            assertThat(cache.getNativeCache().stats().hitCount()).isEqualTo(1);
         }
     }
 }
