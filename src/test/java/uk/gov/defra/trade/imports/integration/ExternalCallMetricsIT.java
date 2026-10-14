@@ -25,6 +25,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import uk.gov.defra.trade.imports.configuration.CacheConfig;
 import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 import uk.gov.defra.trade.imports.metrics.ExternalCall;
 import uk.gov.defra.trade.imports.metrics.ExternalCallMetrics;
@@ -136,15 +137,21 @@ class ExternalCallMetricsIT extends IntegrationBase {
 
   @Test
   void getCountries_shouldMarkMdmUnavailableAndTheTokenEndpointAvailable_whenMdmAnswers500() {
+    // Given: a healthy call first, so the failure below is seen to change the reading
+    restTemplate.getForEntity("/countries", String.class);
+    assertThat(externalCallMetrics.lastCallSucceededByDependency()).containsEntry("mdm", true);
     usingStub().when(
         request().withMethod("GET").withPath("/mdm-service/mdm/geo/countries"),
         Times.unlimited(),
         TimeToLive.unlimited(),
         FAILING_STUB_PRIORITY
     ).respond(response().withStatusCode(500));
+    cacheManager.getCache(CacheConfig.MDM_COUNTRIES_CACHE).clear();
 
+    // When
     restTemplate.getForEntity("/countries", String.class);
 
+    // Then
     assertThat(externalCallMetrics.lastCallSucceededByDependency())
         .containsEntry("mdm", false)
         .containsEntry("trade-token", true);
