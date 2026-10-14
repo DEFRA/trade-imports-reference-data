@@ -16,8 +16,10 @@ class LookupMetricsTest {
 
   @Test
   void recordLookup_shouldCountOneLookupOfTheGivenType() {
+    // When
     metrics.recordLookup(LookupMetrics.PORTS_OF_ENTRY);
 
+    // Then
     assertThat(environment.documents()).hasSize(1);
     JsonNode document = environment.documents().getFirst();
     assertThat(document.get("LookupType").asText()).isEqualTo("ports-of-entry");
