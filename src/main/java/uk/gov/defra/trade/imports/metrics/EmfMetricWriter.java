@@ -5,9 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import software.amazon.cloudwatchlogs.emf.exception.InvalidNamespaceException;
 import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 import software.amazon.cloudwatchlogs.emf.model.DimensionSet;
 import software.amazon.cloudwatchlogs.emf.model.Unit;
+import software.amazon.cloudwatchlogs.emf.util.Validator;
 
 /**
  * Writes one metric with one dimension as a CloudWatch Embedded Metric Format document in the
@@ -38,9 +40,14 @@ public class EmfMetricWriter {
    * @param enabled whether to write at all
    * @param namespace the CloudWatch namespace
    * @param metricsLoggers supplies a fresh logger for each document
+   * @throws InvalidNamespaceException when enabled and the namespace is blank or invalid, so a bad
+   *     namespace stops start-up instead of dropping every metric
    */
   public EmfMetricWriter(
       boolean enabled, String namespace, Supplier<MetricsLogger> metricsLoggers) {
+    if (enabled) {
+      Validator.validateNamespace(namespace);
+    }
     this.enabled = enabled;
     this.namespace = namespace;
     this.metricsLoggers = metricsLoggers;
@@ -76,7 +83,7 @@ public class EmfMetricWriter {
       metricsLogger.putMetric(metric, value, unit);
       metricsLogger.flush();
     } catch (RuntimeException e) {
-      log.warn("Could not write metric {} for {}: {}", metric, dimensionValue, e.getMessage());
+      log.warn("Could not write metric {} for {}", metric, dimensionValue, e);
     }
   }
 }

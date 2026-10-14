@@ -2,10 +2,13 @@ package uk.gov.defra.trade.imports.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import ch.qos.logback.classic.Level;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import software.amazon.cloudwatchlogs.emf.exception.InvalidNamespaceException;
 import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 import software.amazon.cloudwatchlogs.emf.model.Unit;
 
@@ -37,12 +40,40 @@ class EmfMetricWriterTest {
   }
 
   @Test
-  void write_shouldNotThrow_whenTheSinkFails() {
+  void write_shouldLogAWarningAndNotThrow_whenTheSinkFails() {
+    // Given
     var failingEnvironment = new CapturingEmfEnvironment(true);
     var failingWriter =
         new EmfMetricWriter(true, NAMESPACE, () -> new MetricsLogger(failingEnvironment));
 
-    assertThatCode(() -> failingWriter.write("Lookup", 1, Unit.COUNT, "LookupType", "countries"))
+    try (var logs = CapturingLogAppender.attachedTo(EmfMetricWriter.class)) {
+      // When & Then
+      assertThatCode(
+              () -> failingWriter.write("Lookup", 1, Unit.COUNT, "LookupType", "countries"))
+          .doesNotThrowAnyException();
+      assertThat(logs.events())
+          .singleElement()
+          .satisfies(
+              event -> {
+                assertThat(event.getLevel()).isEqualTo(Level.WARN);
+                assertThat(event.getFormattedMessage())
+                    .isEqualTo("Could not write metric Lookup for countries");
+                assertThat(event.getThrowableProxy().getMessage()).isEqualTo("sink unavailable");
+              });
+    }
+  }
+
+  @Test
+  void constructor_shouldRejectABlankNamespace_whenEmfIsEnabled() {
+    // When & Then
+    assertThatThrownBy(() -> new EmfMetricWriter(true, " ", () -> new MetricsLogger(environment)))
+        .isInstanceOf(InvalidNamespaceException.class);
+  }
+
+  @Test
+  void constructor_shouldAcceptABlankNamespace_whenEmfIsDisabled() {
+    // When & Then
+    assertThatCode(() -> new EmfMetricWriter(false, "", () -> new MetricsLogger(environment)))
         .doesNotThrowAnyException();
   }
 
