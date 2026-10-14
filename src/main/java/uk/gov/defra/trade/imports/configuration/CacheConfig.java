@@ -13,6 +13,9 @@ import org.springframework.context.annotation.Configuration;
 @EnableCaching
 public class CacheConfig {
 
+    public static final String MDM_COUNTRIES_CACHE = "MDM_COUNTRIES_CACHE";
+    public static final String MDM_POE_CACHE = "MDM_POE_CACHE";
+
     @Value("${cache.mdm.ttl-minutes:60}")
     long mdmCacheTtlMinutes;
 
@@ -30,7 +33,7 @@ public class CacheConfig {
         // The primary purpose of caching MDM responses is to rate-limit our calls to MDM,
         // rather than to defend against MDM unavailability or improve performance.
         cacheManager.registerCustomCache(
-            "MDM_COUNTRIES_CACHE",
+            MDM_COUNTRIES_CACHE,
             Caffeine.newBuilder()
                 .maximumSize(20)
                 .expireAfterWrite(mdmCacheTtlMinutes, TimeUnit.MINUTES)
@@ -38,7 +41,7 @@ public class CacheConfig {
                 .build()
         );
         cacheManager.registerCustomCache(
-            "MDM_POE_CACHE",
+            MDM_POE_CACHE,
             Caffeine.newBuilder()
                 .maximumSize(20)
                 .expireAfterWrite(mdmCacheTtlMinutes, TimeUnit.MINUTES)

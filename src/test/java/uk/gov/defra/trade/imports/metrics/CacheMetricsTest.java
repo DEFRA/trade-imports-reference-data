@@ -2,12 +2,14 @@ package uk.gov.defra.trade.imports.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.cache.Cache;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 
 class CacheMetricsTest {
@@ -61,6 +63,25 @@ class CacheMetricsTest {
 
     new CacheMetrics(disabledWriter, cacheManager).publish();
 
+    assertThat(environment.documents()).isEmpty();
+  }
+
+  @Test
+  void publish_shouldWarnOnceForEachCacheThatIsMissingOrNotCaffeine() {
+    // Countries is a plain map cache and ports of entry is missing altogether.
+    var metricsWithNoCaches =
+        new CacheMetrics(writer, new ConcurrentMapCacheManager(COUNTRIES_CACHE));
+
+    try (var logs = CapturingLogAppender.attachedTo(CacheMetrics.class)) {
+      metricsWithNoCaches.publish();
+      metricsWithNoCaches.publish();
+
+      assertThat(logs.events())
+          .extracting(ILoggingEvent::getFormattedMessage)
+          .containsExactly(
+              "Cache MDM_COUNTRIES_CACHE is missing or is not a Caffeine cache, so it has no metrics",
+              "Cache MDM_POE_CACHE is missing or is not a Caffeine cache, so it has no metrics");
+    }
     assertThat(environment.documents()).isEmpty();
   }
 
