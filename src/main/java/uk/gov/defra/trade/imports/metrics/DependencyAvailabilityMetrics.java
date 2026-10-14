@@ -16,6 +16,18 @@ import software.amazon.cloudwatchlogs.emf.model.Unit;
  * <p>MDM and the Trade token endpoint are not probed, because the MDM caches exist to limit how
  * often we call MDM: their value is the outcome of the most recent real call, and nothing is
  * published for them until there has been one.
+ *
+ * <p>Because the value is the last outcome, whatever its age, it lags the dependency's real state.
+ * MDM responses are cached for {@code cache.mdm.ttl-minutes} (60 by default) and the token for 30
+ * minutes, so the value can stay at 1 for up to an hour after a dependency goes down. A single
+ * failed call holds it at 0 until the next call succeeds, however long that takes. This metric
+ * is for the dashboard only: the "dependency unavailable" alert is built on {@code
+ * ExternalCallFailure} over a time window, per {@code Dependency} and {@code Operation}, which
+ * reports only calls that actually happened.
+ *
+ * <p>MongoDB is deliberately left out. The service has MongoDB configured, but nothing reads or
+ * writes through it, so its availability says nothing about whether the service works. Removing
+ * the unused configuration is tracked on a separate ticket.
  */
 @Component
 @RequiredArgsConstructor

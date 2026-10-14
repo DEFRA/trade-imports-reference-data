@@ -133,6 +133,11 @@ public class ExternalCallMetrics {
    * Whether the most recent call to each dependency succeeded. A dependency that has not been
    * called since start-up is absent.
    *
+   * <p>The outcome is kept with no time attached, deliberately: one failed call, on any of the
+   * dependency's operations, marks the whole dependency as failed until its next call succeeds,
+   * and in a quiet period that can be a long time. Alerts must not rely on it; they use {@code
+   * ExternalCallFailure} over a time window, per {@code Dependency} and {@code Operation}.
+   *
    * @return an unmodifiable snapshot keyed by dependency name
    */
   public Map<String, Boolean> lastCallSucceededByDependency() {
