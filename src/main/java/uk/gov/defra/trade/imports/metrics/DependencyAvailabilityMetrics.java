@@ -18,9 +18,11 @@ import software.amazon.cloudwatchlogs.emf.model.Unit;
  * published for them until there has been one.
  *
  * <p>Because the value is the last outcome, whatever its age, it lags the dependency's real state.
- * MDM responses are cached for {@code cache.mdm.ttl-minutes} (60 by default) and the token for 30
- * minutes, so the value can stay at 1 for up to an hour after a dependency goes down. A single
- * failed call holds it at 0 until the next call succeeds, however long that takes. This metric
+ * A dependency is only called when a request needs it: MDM responses are cached for {@code
+ * cache.mdm.ttl-minutes} (60 by default), and {@code MdmClientInterceptor} reuses the token until
+ * its own {@code expiresOn}. So the value stays at 1 after a dependency goes down until the next
+ * call to it, which with no traffic may never come. A single failed call holds it at 0 until the
+ * next call succeeds, however long that takes. This metric
  * is for the dashboard only: the "dependency unavailable" alert is built on {@code
  * ExternalCallFailure} over a time window, per {@code Dependency} and {@code Operation}, which
  * reports only calls that actually happened.
