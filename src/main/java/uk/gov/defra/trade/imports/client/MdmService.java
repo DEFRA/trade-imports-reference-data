@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import uk.gov.defra.trade.imports.configuration.CacheConfig;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
 
 @Slf4j
@@ -19,7 +20,7 @@ public class MdmService {
   private final MdmClient mdmClient;
   private final MdmConfiguration mdmConfiguration;
 
-  @Cacheable(value = "MDM_POE_CACHE", unless = "#result == null || #result.isEmpty()")
+  @Cacheable(value = CacheConfig.MDM_POE_CACHE, unless = "#result == null || #result.isEmpty()")
   public List<MdmPortOfEntry> getPortsOfEntry() {
     ResponseEntity<MdmPortsResponse> responseEntity =
         mdmClient.getPorts(mdmConfiguration.getOcpApimSubscriptionKey(), SYSTEM);
@@ -32,7 +33,7 @@ public class MdmService {
     return body.getResult();
   }
 
-  @Cacheable(value = "MDM_COUNTRIES_CACHE", unless = "#result == null || #result.isEmpty()")
+  @Cacheable(value = CacheConfig.MDM_COUNTRIES_CACHE, unless = "#result == null || #result.isEmpty()")
   public List<MdmCountry> getCountries(String blocks) {
     String ocpApimSubscriptionKey = mdmConfiguration.getOcpApimSubscriptionKey();
 

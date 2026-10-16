@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.caffeine.CaffeineCache;
 
 class CacheConfigTest {
 
@@ -44,5 +45,24 @@ class CacheConfigTest {
         assertEquals(3, result.getCacheNames().size());
         assertThat(result.getCacheNames()).containsExactlyInAnyOrder("IDENTITY_TOKEN_CACHE", "MDM_COUNTRIES_CACHE", "MDM_POE_CACHE");
         assertEquals("jwtToken", result.getCache("IDENTITY_TOKEN_CACHE").get("CACHE_KEY").get());
+    }
+
+    @Test
+    void mdmCaches_shouldRecordHitsAndMisses() {
+        // Given
+        final CacheManager result = cacheConfigUnderTest.cacheManager(Caffeine.newBuilder());
+
+        for (String name : List.of(CacheConfig.MDM_COUNTRIES_CACHE, CacheConfig.MDM_POE_CACHE)) {
+            CaffeineCache cache = (CaffeineCache) result.getCache(name);
+
+            // When
+            cache.get("key");
+            cache.put("key", "value");
+            cache.get("key");
+
+            // Then
+            assertThat(cache.getNativeCache().stats().missCount()).isEqualTo(1);
+            assertThat(cache.getNativeCache().stats().hitCount()).isEqualTo(1);
+        }
     }
 }
