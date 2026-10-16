@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import uk.gov.defra.trade.imports.interceptor.MdmClientInterceptor;
@@ -28,5 +29,31 @@ public interface MdmClient {
   ResponseEntity<MdmPortsResponse> getPorts(
       @RequestHeader(OCP_APIM_SUBSCRIPTION_KEY) String ocpApimSubscriptionKey,
       @RequestParam(value = "system", required = false) String system
+  );
+
+  @GetMapping(value = "/mdm/trade/product/search")
+  ResponseEntity<MdmProductPage<MdmProductSearchResult>> searchProducts(
+      @RequestHeader(OCP_APIM_SUBSCRIPTION_KEY) String ocpApimSubscriptionKey,
+      @RequestParam(value = "q") String query,
+      @RequestParam(value = "dataset") String dataset,
+      @RequestParam(value = "page") int page,
+      @RequestParam(value = "size") int size
+  );
+
+  /** {@code codes} is comma-separated, the form MDM takes; a repeated parameter isn't. */
+  @GetMapping(value = "/mdm/trade/product/commodities")
+  ResponseEntity<List<MdmCommodity>> getCommodities(
+      @RequestHeader(OCP_APIM_SUBSCRIPTION_KEY) String ocpApimSubscriptionKey,
+      @RequestParam(value = "codes") String codes,
+      @RequestParam(value = "dataset") String dataset
+  );
+
+  @GetMapping(value = "/mdm/trade/product/commodities/{code}/species")
+  ResponseEntity<MdmProductPage<MdmSpecies>> getCommoditySpecies(
+      @RequestHeader(OCP_APIM_SUBSCRIPTION_KEY) String ocpApimSubscriptionKey,
+      @PathVariable("code") String code,
+      @RequestParam(value = "dataset") String dataset,
+      @RequestParam(value = "page") int page,
+      @RequestParam(value = "size") int size
   );
 }

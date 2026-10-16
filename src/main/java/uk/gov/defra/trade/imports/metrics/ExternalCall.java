@@ -20,6 +20,12 @@ public record ExternalCall(String dependency, String operation, String interface
       new ExternalCall("mdm", "get-countries", VOLUMETRICS_INTERFACE_ID);
   public static final ExternalCall MDM_GET_PORTS_OF_ENTRY =
       new ExternalCall("mdm", "get-ports-of-entry", VOLUMETRICS_INTERFACE_ID);
+  public static final ExternalCall MDM_SEARCH_PRODUCTS =
+      new ExternalCall("mdm", "search-products", VOLUMETRICS_INTERFACE_ID);
+  public static final ExternalCall MDM_GET_COMMODITIES =
+      new ExternalCall("mdm", "get-commodities", VOLUMETRICS_INTERFACE_ID);
+  public static final ExternalCall MDM_GET_COMMODITY_SPECIES =
+      new ExternalCall("mdm", "get-commodity-species", VOLUMETRICS_INTERFACE_ID);
 
   public ExternalCall {
     Objects.requireNonNull(dependency, "dependency must not be null");

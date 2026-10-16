@@ -2,7 +2,9 @@ package uk.gov.defra.trade.imports.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -210,6 +212,125 @@ class MdmServiceTest {
 
     // Then: null body is treated as empty list rather than NPE
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  void searchProducts_callsMdmWithGbnagDatasetAndPaging() {
+    when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0, 100, 0L, 0)));
+
+    mdmService.searchProducts("cattle", 0, 100);
+
+    verify(mdmClient).searchProducts(SUBSCRIPTION_KEY, "cattle", "gbnag", 0, 100);
+  }
+
+  @Test
+  void searchProducts_returnsBodyFromMdmResponse() {
+    MdmProductSearchResult bosTaurus = MdmProductSearchResult.builder()
+        .resultType("species")
+        .speciesName("Bos taurus")
+        .commonName("Cattle or Cow")
+        .commodityCnCode("0102")
+        .build();
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(MDM_TRACE_HEADER, "trace-abc-123");
+    when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok().headers(headers)
+            .body(new MdmProductPage<>(List.of(bosTaurus), 0, 100, 8L, 1)));
+
+    MdmProductPage<MdmProductSearchResult> result = mdmService.searchProducts("cattle", 0, 100);
+
+    assertThat(result.getContent()).containsExactly(bosTaurus);
+    assertThat(result.getTotalElements()).isEqualTo(8L);
+  }
+
+  @Test
+  void searchProducts_returnsEmptyPage_whenMdmBodyIsNull() {
+    when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(null));
+
+    MdmProductPage<MdmProductSearchResult> result = mdmService.searchProducts("cattle", 0, 100);
+
+    assertThat(result.getContent()).isEmpty();
+    assertThat(result.getTotalElements()).isZero();
+  }
+
+  @Test
+  void getCommodities_callsMdmWithCodesCommaSeparated() {
+    when(mdmClient.getCommodities(any(), any(), any())).thenReturn(ResponseEntity.ok(List.of()));
+
+    mdmService.getCommodities(List.of("0101", "0102", "01061900"));
+
+    verify(mdmClient).getCommodities(SUBSCRIPTION_KEY, "0101,0102,01061900", "gbnag");
+  }
+
+  @Test
+  void getCommodities_returnsBodyFromMdmResponse() {
+    MdmCommodity liveBovineAnimals = MdmCommodity.builder()
+        .code("0102")
+        .description("Live bovine animals")
+        .isGerminal(false)
+        .build();
+    when(mdmClient.getCommodities(any(), any(), any()))
+        .thenReturn(ResponseEntity.ok(List.of(liveBovineAnimals)));
+
+    List<MdmCommodity> result = mdmService.getCommodities(List.of("0102"));
+
+    assertThat(result).containsExactly(liveBovineAnimals);
+  }
+
+  @Test
+  void getCommodities_doesNotCallMdm_whenThereAreNoCodes() {
+    List<MdmCommodity> result = mdmService.getCommodities(List.of());
+
+    assertThat(result).isEmpty();
+    verifyNoInteractions(mdmClient);
+  }
+
+  @Test
+  void getCommodities_returnsEmptyList_whenMdmBodyIsNull() {
+    when(mdmClient.getCommodities(any(), any(), any())).thenReturn(ResponseEntity.ok(null));
+
+    List<MdmCommodity> result = mdmService.getCommodities(List.of("0102"));
+
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void getCommoditySpecies_callsMdmWithCodeGbnagDatasetAndPaging() {
+    when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0, 500, 0L, null)));
+
+    mdmService.getCommoditySpecies("01061900", 1, 500);
+
+    verify(mdmClient).getCommoditySpecies(SUBSCRIPTION_KEY, "01061900", "gbnag", 1, 500);
+  }
+
+  @Test
+  void getCommoditySpecies_returnsBodyFromMdmResponse() {
+    MdmSpecies felisCatus = MdmSpecies.builder()
+        .speciesName("Felis catus")
+        .commonName("Domestic Cat")
+        .commodityCnCode("01061900")
+        .build();
+    when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(felisCatus), 0, 500, 120L, null)));
+
+    MdmProductPage<MdmSpecies> result = mdmService.getCommoditySpecies("01061900", 0, 500);
+
+    assertThat(result.getContent()).containsExactly(felisCatus);
+    assertThat(result.getTotalElements()).isEqualTo(120L);
+  }
+
+  @Test
+  void getCommoditySpecies_returnsEmptyPage_whenMdmBodyIsNull() {
+    when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(null));
+
+    MdmProductPage<MdmSpecies> result = mdmService.getCommoditySpecies("01061900", 0, 500);
+
+    assertThat(result.getContent()).isEmpty();
+    assertThat(result.getTotalElements()).isZero();
   }
 
   @Test
