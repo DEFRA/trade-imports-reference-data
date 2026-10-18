@@ -87,7 +87,7 @@ public class ExternalCallMetrics {
     try {
       result = action.call();
     } catch (IOException | RuntimeException e) {
-      recordCall(call, Duration.ofNanos(System.nanoTime() - startedAt), true);
+      record(call, Duration.ofNanos(System.nanoTime() - startedAt), true, e);
       throw e;
     }
     recordCall(call, Duration.ofNanos(System.nanoTime() - startedAt), isFailure.test(result));
@@ -102,8 +102,12 @@ public class ExternalCallMetrics {
    * @param failed whether it failed
    */
   public void recordCall(ExternalCall call, Duration elapsed, boolean failed) {
+    record(call, elapsed, failed, null);
+  }
+
+  private void record(ExternalCall call, Duration elapsed, boolean failed, Throwable cause) {
     lastCallSucceededByDependency.put(call.dependency(), !failed);
-    logCall(call, elapsed, failed);
+    logCall(call, elapsed, failed, cause);
     if (!enabled) {
       return;
     }
@@ -125,7 +129,8 @@ public class ExternalCallMetrics {
           "Could not record external call {}/{}: {}",
           call.dependency(),
           call.operation(),
-          e.getMessage());
+          e.getMessage(),
+          e);
     }
   }
 
@@ -144,14 +149,14 @@ public class ExternalCallMetrics {
     return Map.copyOf(lastCallSucceededByDependency);
   }
 
-  private static void logCall(ExternalCall call, Duration elapsed, boolean failed) {
+  private static void logCall(ExternalCall call, Duration elapsed, boolean failed, Throwable cause) {
     String action = call.dependency() + "/" + call.operation();
     String outcome = failed ? "failure" : "success";
     try (var _ = MDC.putCloseable("event.category", EVENT_CATEGORY);
         var _ = MDC.putCloseable("event.action", action);
         var _ = MDC.putCloseable("event.outcome", outcome);
         var _ = MDC.putCloseable("event.duration", String.valueOf(elapsed.toNanos()))) {
-      log.info("External call {} {} in {} ms", action, outcome, elapsed.toMillis());
+      log.info("External call {} {} in {} ms", action, outcome, elapsed.toMillis(), cause);
     }
   }
 }

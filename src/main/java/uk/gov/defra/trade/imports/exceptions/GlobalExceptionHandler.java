@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ProblemDetail handleValidationException(MethodArgumentNotValidException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
-    log.warn("Validation error (trace: {}): {}", traceId, ex.getMessage());
+    log.warn("Validation error (trace: {}): {}", traceId, ex.getMessage(), ex);
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
         HttpStatus.BAD_REQUEST,
@@ -66,7 +66,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(NotFoundException.class)
   public ProblemDetail handleNotFoundException(NotFoundException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
-    log.warn("Resource not found (trace: {}): {}", traceId, ex.getMessage());
+    log.warn("Resource not found (trace: {}): {}", traceId, ex.getMessage(), ex);
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
         HttpStatus.NOT_FOUND,
@@ -89,7 +89,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(ConflictException.class)
   public ProblemDetail handleConflictException(ConflictException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
-    log.warn("Resource conflict (trace: {}): {}", traceId, ex.getMessage());
+    log.warn("Resource conflict (trace: {}): {}", traceId, ex.getMessage(), ex);
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
         HttpStatus.CONFLICT,
