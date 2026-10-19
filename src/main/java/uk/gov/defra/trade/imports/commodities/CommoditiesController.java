@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.defra.trade.imports.metrics.LookupMetrics;
 
 @Slf4j
 @RestController
@@ -19,11 +20,13 @@ public class CommoditiesController {
 
   private final CommoditySearchService commoditySearchService;
   private final SpeciesCheckService speciesCheckService;
+  private final LookupMetrics lookupMetrics;
 
   @GetMapping()
   @Timed("controller.searchCommodities.time")
   public ResponseEntity<CommoditySearchResponse> searchCommodities(
       @RequestParam(required = false, value = "search") String search) {
+    lookupMetrics.recordLookup(LookupMetrics.COMMODITY_SEARCH);
     return ResponseEntity.ok(commoditySearchService.search(search));
   }
 
@@ -31,6 +34,7 @@ public class CommoditiesController {
   @Timed("controller.checkSpecies.time")
   public ResponseEntity<SpeciesCheckResponse> checkSpecies(
       @RequestBody(required = false) SpeciesCheckRequest request) {
+    lookupMetrics.recordLookup(LookupMetrics.SPECIES_CHECK);
     return ResponseEntity.ok(speciesCheckService.check(request));
   }
 }
