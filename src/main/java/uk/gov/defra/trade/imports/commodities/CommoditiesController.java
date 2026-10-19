@@ -25,9 +25,11 @@ public class CommoditiesController {
   @GetMapping()
   @Timed("controller.searchCommodities.time")
   public ResponseEntity<CommoditySearchResponse> searchCommodities(
-      @RequestParam(required = false, value = "search") String search) {
+      @RequestParam(required = false, value = "search") String search,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "100") int size) {
     lookupMetrics.recordLookup(LookupMetrics.COMMODITY_SEARCH);
-    return ResponseEntity.ok(commoditySearchService.search(search));
+    return ResponseEntity.ok(commoditySearchService.search(search, page, size));
   }
 
   @PostMapping("/species-check")

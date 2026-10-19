@@ -37,11 +37,11 @@ class CommoditiesControllerTest {
   @Test
   void searchCommodities_shouldCountOneCommoditySearchLookup() {
     // Given
-    when(commoditySearchService.search("dog"))
+    when(commoditySearchService.search("dog", 0, 10))
         .thenReturn(CommoditySearchResponse.builder().total(0).groups(List.of()).build());
 
     // When
-    ResponseEntity<CommoditySearchResponse> response = controller.searchCommodities("dog");
+    ResponseEntity<CommoditySearchResponse> response = controller.searchCommodities("dog", 0, 10);
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

@@ -30,12 +30,12 @@ class CommoditySearchServiceTest {
   @Test
   void search_groupsSpeciesByCodeInMdmOrder() {
     // Given: MDM's rows for "dog"
-    when(mdmService.searchProducts("dog", 0, 100)).thenReturn(page(2,
+    when(mdmService.searchProducts("dog", 0, 10)).thenReturn(page(2,
         species("01061900", "Nyctereutes procyonoides", "Raccoon Dog"),
         species("01061900", "Canis familiaris", "Dog")));
 
     // When
-    CommoditySearchResponse response = service.search("dog");
+    CommoditySearchResponse response = service.search("dog", 0, 10);
 
     // Then
     assertThat(response.getTotal()).isEqualTo(2);
@@ -51,7 +51,7 @@ class CommoditySearchServiceTest {
   @Test
   void search_listsACommodityRowsSpeciesOncePerCode() {
     // Given: MDM's rows for "horse", where 0101 comes back as species rows and as a commodity row
-    when(mdmService.searchProducts("horse", 0, 100)).thenReturn(page(7,
+    when(mdmService.searchProducts("horse", 0, 10)).thenReturn(page(7,
         species("0101", "Equus cabalus", "Horse"),
         species("05119985", "Equus cabalus", "Horse"),
         species("05119985", "Equus caballus", "Horse"),
@@ -70,7 +70,7 @@ class CommoditySearchServiceTest {
             .build()));
 
     // When
-    CommoditySearchResponse response = service.search("horse");
+    CommoditySearchResponse response = service.search("horse", 0, 10);
 
     // Then
     assertThat(response.getTotal()).isEqualTo(7);
@@ -98,12 +98,52 @@ class CommoditySearchServiceTest {
   }
 
   @Test
-  void search_trimsTheTermBeforeSearching() {
+  void search_listsNoMoreSpeciesThanThePageSize_whenACommodityRowHoldsMore() {
+    // Given: MDM's commodity row for "0102" carries its species inside it
+    when(mdmService.searchProducts("0102", 0, 2)).thenReturn(page(1,
+        MdmProductSearchResult.builder()
+            .resultType(MdmProductSearchResult.COMMODITY)
+            .code("0102")
+            .description("Live bovine animals")
+            .scientificNames(List.of(
+                MdmSpecies.builder().speciesName("Bos").commonName("Cattle").build(),
+                MdmSpecies.builder().speciesName("Bubalus").commonName("water buffalos").build(),
+                MdmSpecies.builder().speciesName("Bos taurus").commonName("Cattle or Cow").build()))
+            .build(),
+        species("01061900", "Bos taurus", "Cattle or Cow")));
+
+    // When
+    CommoditySearchResponse response = service.search("0102", 0, 2);
+
+    // Then
+    assertThat(response.getGroups()).containsExactly(CommodityGroup.builder()
+        .code("0102")
+        .species(List.of(
+            CommoditySpecies.builder().latinName("Bos").commonName("Cattle").build(),
+            CommoditySpecies.builder().latinName("Bubalus").commonName("water buffalos").build()))
+        .build());
+  }
+
+  @Test
+  void search_asksMdmForAPageWithinItsLimits() {
     // Given
     when(mdmService.searchProducts("dog", 0, 100)).thenReturn(page(0));
 
     // When
-    CommoditySearchResponse response = service.search("  dog  ");
+    CommoditySearchResponse response = service.search("dog", -1, 500);
+
+    // Then
+    assertThat(response.getPage()).isZero();
+    assertThat(response.getSize()).isEqualTo(100);
+  }
+
+  @Test
+  void search_trimsTheTermBeforeSearching() {
+    // Given
+    when(mdmService.searchProducts("dog", 0, 10)).thenReturn(page(0));
+
+    // When
+    CommoditySearchResponse response = service.search("  dog  ", 0, 10);
 
     // Then
     assertThat(response.getTotal()).isZero();
@@ -113,9 +153,9 @@ class CommoditySearchServiceTest {
   @Test
   void search_returnsNothingWithoutCallingMdm_whenTheTermIsShorterThanTwoCharacters() {
     // When
-    CommoditySearchResponse blank = service.search("   ");
-    CommoditySearchResponse missing = service.search(null);
-    CommoditySearchResponse oneCharacter = service.search(" c ");
+    CommoditySearchResponse blank = service.search("   ", 0, 10);
+    CommoditySearchResponse missing = service.search(null, 0, 10);
+    CommoditySearchResponse oneCharacter = service.search(" c ", 0, 10);
 
     // Then
     assertThat(List.of(blank, missing, oneCharacter)).allSatisfy(response -> {

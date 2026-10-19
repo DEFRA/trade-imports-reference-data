@@ -83,7 +83,24 @@ class CommoditiesControllerIT extends IntegrationBase {
   }
 
   @Test
-  void searchCommodities_asksMdmForOneHundredResults() {
+  void searchCommodities_asksMdmForThePageAndSizeGiven() {
+    // When
+    ResponseEntity<CommoditySearchResponse> response = restTemplate.getForEntity(
+        "/commodities?search=dog&page=1&size=10", CommoditySearchResponse.class);
+
+    // Then
+    assertThat(response.getBody().getPage()).isEqualTo(1);
+    assertThat(response.getBody().getSize()).isEqualTo(10);
+    usingStub().verify(
+        request().withMethod("GET").withPath(SEARCH_PATH)
+            .withQueryStringParameter("q", "dog")
+            .withQueryStringParameter("page", "1")
+            .withQueryStringParameter("size", "10"),
+        VerificationTimes.exactly(1));
+  }
+
+  @Test
+  void searchCommodities_asksMdmForOneHundredResults_whenNoSizeIsGiven() {
     // When
     restTemplate.getForEntity("/commodities?search=dog", String.class);
 
@@ -104,7 +121,7 @@ class CommoditiesControllerIT extends IntegrationBase {
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).isEqualTo("{\"total\":0,\"groups\":[]}");
+    assertThat(response.getBody()).isEqualTo("{\"total\":0,\"page\":0,\"size\":100,\"groups\":[]}");
     usingStub().verify(request().withPath(SEARCH_PATH), VerificationTimes.never());
   }
 
