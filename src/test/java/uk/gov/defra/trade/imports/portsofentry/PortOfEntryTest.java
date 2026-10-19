@@ -3,12 +3,9 @@ package uk.gov.defra.trade.imports.portsofentry;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
 import uk.gov.defra.trade.imports.client.MdmPortOfEntry;
+import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 
-@ExtendWith(OutputCaptureExtension.class)
 class PortOfEntryTest {
 
   @Test
@@ -21,14 +18,18 @@ class PortOfEntryTest {
   }
 
   @Test
-  void constructor_warnsOnceWithThePortCodeWhenTheTrafficIsUnknown(CapturedOutput output) {
-    var first = new PortOfEntry(mdmPort("GBHOV", "Hovercraft"));
-    var second = new PortOfEntry(mdmPort("GBHOV", "Hovercraft"));
+  void constructor_warnsOnceWithThePortCodeWhenTheTrafficIsUnknown() {
+    try (var logs = CapturingLogAppender.attachedTo(PortOfEntry.class)) {
+      var first = new PortOfEntry(mdmPort("GBHOV", "Hovercraft"));
+      var second = new PortOfEntry(mdmPort("GBHOV", "Hovercraft"));
 
-    assertThat(first.getType()).isNull();
-    assertThat(second.getType()).isNull();
-    assertThat(output.getOut().split("MDM port GBHOV has traffic 'Hovercraft', which is not a known port type", -1))
-        .hasSize(2);
+      assertThat(first.getType()).isNull();
+      assertThat(second.getType()).isNull();
+      assertThat(logs.events())
+          .singleElement()
+          .satisfies(event -> assertThat(event.getFormattedMessage())
+              .startsWith("MDM port GBHOV has traffic 'Hovercraft', which is not a known port type"));
+    }
   }
 
   private static MdmPortOfEntry mdmPort(String code, String traffic) {

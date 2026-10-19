@@ -6,8 +6,6 @@ import java.util.stream.Stream;
 
 /**
  * The kind of a port as MDM's traffic field records it.
- *
- * Declaration order is the order port lists are grouped in: airports, then seaports, then rail ports.
  */
 public enum PortType {
   AIRPORT("airport", "Airport"),
