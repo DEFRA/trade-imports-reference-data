@@ -89,6 +89,27 @@ class ExternalCallMetricsTest {
   }
 
   @Test
+  void measure_shouldLogTheExceptionThatFailedTheCall() {
+    IOException failure = new IOException("connection reset");
+
+    try (var logs = CapturingLogAppender.attachedTo(ExternalCallMetrics.class)) {
+      assertThatThrownBy(
+              () ->
+                  metrics.measure(
+                      ExternalCall.MDM_GET_PORTS_OF_ENTRY,
+                      () -> {
+                        throw failure;
+                      },
+                      r -> false))
+          .isSameAs(failure);
+
+      var throwable = logs.events().getFirst().getThrowableProxy();
+      assertThat(throwable.getClassName()).isEqualTo(IOException.class.getName());
+      assertThat(throwable.getMessage()).isEqualTo("connection reset");
+    }
+  }
+
+  @Test
   void measure_shouldRethrowTheSameRuntimeException_andRecordAFailure() {
     IllegalStateException failure = new IllegalStateException("boom");
 

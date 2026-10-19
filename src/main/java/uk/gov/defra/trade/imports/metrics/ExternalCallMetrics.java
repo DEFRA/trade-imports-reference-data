@@ -25,9 +25,9 @@ import software.amazon.cloudwatchlogs.emf.model.Unit;
  * {@code Outcome} and, where the call has one, the {@code Interface} properties. Recording never
  * breaks a call: a failure to record is logged as a warning and swallowed.
  *
- * <p>Each call is also logged, because EMF documents go to CloudWatch and cannot be searched in
- * OpenSearch. The line carries the ECS {@code event.*} fields CDP keeps and, where there is one,
- * the request's {@code trace.id}. It is written whether or not EMF is enabled.
+ * <p>Each call is also logged, with the ECS {@code event.*} fields and, where there is one, the
+ * request's {@code trace.id}, and the exception when the call threw. It is written whether or not
+ * EMF is enabled.
  */
 @Slf4j
 @Component
@@ -51,7 +51,7 @@ public class ExternalCallMetrics {
   }
 
   /**
-   * Supplies each call's {@code MetricsLogger}, so a test can capture the EMF output.
+   * Builds the metrics with the source of each call's {@code MetricsLogger}.
    *
    * @param enabled whether to record at all
    * @param namespace the CloudWatch namespace
@@ -87,7 +87,7 @@ public class ExternalCallMetrics {
     try {
       result = action.call();
     } catch (IOException | RuntimeException e) {
-      recordCall(call, Duration.ofNanos(System.nanoTime() - startedAt), true);
+      recordCall(call, Duration.ofNanos(System.nanoTime() - startedAt), true, e);
       throw e;
     }
     recordCall(call, Duration.ofNanos(System.nanoTime() - startedAt), isFailure.test(result));
@@ -102,8 +102,12 @@ public class ExternalCallMetrics {
    * @param failed whether it failed
    */
   public void recordCall(ExternalCall call, Duration elapsed, boolean failed) {
+    recordCall(call, elapsed, failed, null);
+  }
+
+  private void recordCall(ExternalCall call, Duration elapsed, boolean failed, Throwable cause) {
     lastCallSucceededByDependency.put(call.dependency(), !failed);
-    logCall(call, elapsed, failed);
+    logCall(call, elapsed, failed, cause);
     if (!enabled) {
       return;
     }
@@ -125,18 +129,15 @@ public class ExternalCallMetrics {
           "Could not record external call {}/{}: {}",
           call.dependency(),
           call.operation(),
-          e.getMessage());
+          e.getMessage(),
+          e);
     }
   }
 
   /**
    * Whether the most recent call to each dependency succeeded. A dependency that has not been
-   * called since start-up is absent.
-   *
-   * <p>The outcome is kept with no time attached, deliberately: one failed call, on any of the
-   * dependency's operations, marks the whole dependency as failed until its next call succeeds,
-   * and in a quiet period that can be a long time. Alerts must not rely on it; they use {@code
-   * ExternalCallFailure} over a time window, per {@code Dependency} and {@code Operation}.
+   * called since start-up is absent. The outcome has no time attached: one failed call, on any of
+   * the dependency's operations, marks the whole dependency as failed until its next call succeeds.
    *
    * @return an unmodifiable snapshot keyed by dependency name
    */
@@ -144,14 +145,14 @@ public class ExternalCallMetrics {
     return Map.copyOf(lastCallSucceededByDependency);
   }
 
-  private static void logCall(ExternalCall call, Duration elapsed, boolean failed) {
+  private static void logCall(ExternalCall call, Duration elapsed, boolean failed, Throwable cause) {
     String action = call.dependency() + "/" + call.operation();
     String outcome = failed ? "failure" : "success";
     try (var _ = MDC.putCloseable("event.category", EVENT_CATEGORY);
         var _ = MDC.putCloseable("event.action", action);
         var _ = MDC.putCloseable("event.outcome", outcome);
         var _ = MDC.putCloseable("event.duration", String.valueOf(elapsed.toNanos()))) {
-      log.info("External call {} {} in {} ms", action, outcome, elapsed.toMillis());
+      log.info("External call {} {} in {} ms", action, outcome, elapsed.toMillis(), cause);
     }
   }
 }

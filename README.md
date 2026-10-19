@@ -76,6 +76,23 @@ Run the application:
 mvn spring-boot:run
 ```
 
+### Ports of entry
+
+Port lists are grouped in `PortType` declaration order: airports, then seaports, then rail ports. A port whose MDM traffic matches no type comes last, and the first sight of each such port and traffic is logged as a warning.
+
+### Metrics
+
+- Every call to MDM and the Trade token endpoint is logged as well as sent as an EMF document, because EMF documents go to CloudWatch and cannot be searched in OpenSearch.
+- `DependencyAvailable` is for the dashboard only. It is not a Spring `HealthIndicator`, because CDP uses `/health` to decide whether a task is alive and would restart every task whenever a dependency went down.
+- Dependencies are not probed, because the MDM caches exist to limit how often the service calls MDM. `DependencyAvailable` is therefore the last real outcome, whatever its age: MDM responses are cached for `cache.mdm.ttl-minutes` (60 by default) and the token is reused until it expires, so the value stays at 1 after a dependency goes down until the next call, and one failed call holds it at 0 until a call succeeds.
+- The "dependency unavailable" alert is built on `ExternalCallFailure` over a time window, per `Dependency` and `Operation`, which reports only calls that happened.
+- MongoDB is left out: it is configured, but nothing reads or writes through it.
+
+### Configuration notes
+
+- When `HTTP_PROXY` is set to `http://host:port`, every outbound HTTP and HTTPS call goes through it, as CDP requires for egress; without it, calls go direct. A malformed value is logged with its credentials masked and without the parse exception, whose message repeats the URL.
+- `GlobalExceptionHandler` answers only application exceptions. Spring's own exceptions, such as a 404 for an unknown path, keep Spring's answers.
+
 ### SonarCloud
 
 Example SonarCloud configuration are available in the GitHub Action workflows.
