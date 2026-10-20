@@ -19,6 +19,7 @@ public class CommoditySearchService {
 
   static final int MINIMUM_SEARCH_LENGTH = 2;
   static final int MAXIMUM_PAGE_SIZE = 100;
+  private static final String LIVE_ANIMALS_CHAPTER = "01";
 
   private final MdmService mdmService;
 
@@ -49,16 +50,20 @@ public class CommoditySearchService {
 
   private static void addRow(Map<String, List<CommoditySpecies>> speciesByCode,
       MdmProductSearchResult row, SpeciesLimit speciesLimit) {
-    if (row.resultType() == SPECIES && row.commodityCnCode() != null) {
+    if (row.resultType() == SPECIES && isLiveAnimalCode(row.commodityCnCode())) {
       addSpecies(speciesByCode, row.commodityCnCode(), row.speciesName(), row.commonName(),
           speciesLimit);
-    } else if (row.resultType() == COMMODITY && row.code() != null) {
+    } else if (row.resultType() == COMMODITY && isLiveAnimalCode(row.code())) {
       speciesByCode.computeIfAbsent(row.code(), code -> new ArrayList<>());
       if (row.species() != null) {
         row.species().forEach(species -> addSpecies(speciesByCode, row.code(),
             species.speciesName(), species.commonName(), speciesLimit));
       }
     }
+  }
+
+  private static boolean isLiveAnimalCode(String code) {
+    return code != null && code.startsWith(LIVE_ANIMALS_CHAPTER);
   }
 
   private static void addSpecies(Map<String, List<CommoditySpecies>> speciesByCode, String code,

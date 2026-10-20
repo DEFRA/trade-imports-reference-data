@@ -84,18 +84,32 @@ class CommoditySearchServiceTest {
                 CommoditySpecies.builder().latinName("Equus asinus").commonName("Donkey").build()))
             .build(),
         CommodityGroup.builder()
-            .code("05119985")
-            .species(List.of(
-                CommoditySpecies.builder().latinName("Equus cabalus").commonName("Horse").build(),
-                CommoditySpecies.builder().latinName("Equus caballus").commonName("Horse").build(),
-                CommoditySpecies.builder().latinName("Equidae").commonName("Horses").build()))
-            .build(),
-        CommodityGroup.builder()
             .code("01061900")
             .species(List.of(
                 CommoditySpecies.builder().latinName("Equidae").commonName("Horses").build(),
                 CommoditySpecies.builder().latinName("Equus").commonName("Horses").build()))
             .build());
+  }
+
+  @Test
+  void search_leavesOutCodesOutsideTheLiveAnimalsChapter() {
+    // Given
+    givenMdmSearchAnswers("cattle", 0, 10, page(4,
+        species("0102", "Bos taurus", "Cattle or Cow"),
+        species("05119985", "Bos taurus", "Cattle or Cow"),
+        species("05111000", "Bos taurus", "Cattle or Cow"),
+        commodityRow("05111000", "Bovine semen",
+            MdmSpecies.builder().speciesName("Bos").commonName("Cattle").build())));
+
+    // When
+    CommoditySearchResponse response = service.search("cattle", 0, 10);
+
+    // Then
+    assertThat(response.groups()).containsExactly(CommodityGroup.builder()
+        .code("0102")
+        .species(List.of(
+            CommoditySpecies.builder().latinName("Bos taurus").commonName("Cattle or Cow").build()))
+        .build());
   }
 
   @Test
