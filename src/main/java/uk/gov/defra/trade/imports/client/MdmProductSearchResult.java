@@ -1,34 +1,27 @@
 package uk.gov.defra.trade.imports.client;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-/**
- * A search row is either a species ({@code resultType} "species") or a whole commodity
- * ("commodity", e.g. for a code search), each with its own fields; the other kind's are null.
- */
-@Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class MdmProductSearchResult {
+public record MdmProductSearchResult(
+    @JsonFormat(with = JsonFormat.Feature.READ_UNKNOWN_ENUM_VALUES_AS_NULL) ResultType resultType,
+    String speciesName,
+    String commonName,
+    String commodityCnCode,
+    String code,
+    String description,
+    Boolean isGerminal,
+    Boolean isSelectable,
+    Integer speciesCount,
+    @JsonProperty("scientificNames") List<MdmSpecies> species) {
 
-  public static final String SPECIES = "species";
-  public static final String COMMODITY = "commodity";
-
-  private String resultType;
-
-  private String speciesName;
-  private String commonName;
-  private String commodityCnCode;
-
-  private String code;
-  private String description;
-  private Boolean isGerminal;
-  private Boolean isSelectable;
-  private Integer speciesCount;
-  private List<MdmSpecies> scientificNames;
+  public enum ResultType {
+    @JsonProperty("species")
+    SPECIES,
+    @JsonProperty("commodity")
+    COMMODITY
+  }
 }

@@ -2,7 +2,6 @@ package uk.gov.defra.trade.imports.commodities;
 
 import io.micrometer.core.annotation.Timed;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.defra.trade.imports.metrics.LookupMetrics;
 
-@Slf4j
 @RestController
 @AllArgsConstructor
 @RequestMapping("/commodities")
@@ -25,11 +23,11 @@ public class CommoditiesController {
   @GetMapping()
   @Timed("controller.searchCommodities.time")
   public ResponseEntity<CommoditySearchResponse> searchCommodities(
-      @RequestParam(required = false, value = "search") String search,
+      @RequestParam(required = false, value = "search") String searchTerm,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "100") int size) {
     lookupMetrics.recordLookup(LookupMetrics.COMMODITY_SEARCH);
-    return ResponseEntity.ok(commoditySearchService.search(search, page, size));
+    return ResponseEntity.ok(commoditySearchService.search(searchTerm, page, size));
   }
 
   @PostMapping("/species-check")

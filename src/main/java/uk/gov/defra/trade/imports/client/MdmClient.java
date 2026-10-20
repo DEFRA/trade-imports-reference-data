@@ -40,11 +40,10 @@ public interface MdmClient {
       @RequestParam(value = "size") int size
   );
 
-  /** {@code codes} is comma-separated, the form MDM takes; a repeated parameter isn't. */
   @GetMapping(value = "/mdm/trade/product/commodities")
   ResponseEntity<List<MdmCommodity>> getCommodities(
       @RequestHeader(OCP_APIM_SUBSCRIPTION_KEY) String ocpApimSubscriptionKey,
-      @RequestParam(value = "codes") String codes,
+      @RequestParam(value = "codes") String commaSeparatedCodes,
       @RequestParam(value = "dataset") String dataset
   );
 

@@ -2,7 +2,6 @@ package uk.gov.defra.trade.imports.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +18,6 @@ import uk.gov.defra.trade.imports.commodities.CommoditySpecies;
 import uk.gov.defra.trade.imports.commodities.SpeciesCheckRequest;
 import uk.gov.defra.trade.imports.commodities.SpeciesCheckResponse;
 
-/** The MDM responses are TST's own, saved on 16 Oct 2026. */
 class CommoditiesControllerIT extends IntegrationBase {
 
   private static final String SEARCH_PATH = "/mdm-service/mdm/trade/product/search";
@@ -31,21 +29,10 @@ class CommoditiesControllerIT extends IntegrationBase {
 
   @BeforeEach
   void stubServices() {
-    usingStub()
-        .when(request().withMethod("POST").withPath("/trade-auth/token"))
-        .respond(response()
-            .withStatusCode(200)
-            .withContentType(org.mockserver.model.MediaType.APPLICATION_JSON)
-            .withBody("{\"access_token\":\"test-token\",\"expires_on\":9999999999999}"));
+    stubTradeAuthToken();
     stubSearch("dog", "integration/mdm-product-search-dog-response.json");
     stubSearch("0102", "integration/mdm-product-search-0102-response.json");
-    usingStub()
-        .when(request().withMethod("GET").withPath(SPECIES_PATH))
-        .respond(response()
-            .withStatusCode(200)
-            .withHeader("x-ms-middleware-request-id", "test-trace-id")
-            .withContentType(org.mockserver.model.MediaType.APPLICATION_JSON)
-            .withBody(getJsonFromFile("integration/mdm-product-species-0102-response.json")));
+    stubMdmGet(SPECIES_PATH, "integration/mdm-product-species-0102-response.json");
   }
 
   @Test
@@ -56,8 +43,8 @@ class CommoditiesControllerIT extends IntegrationBase {
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody().getTotal()).isEqualTo(2);
-    assertThat(response.getBody().getGroups()).containsExactly(CommodityGroup.builder()
+    assertThat(response.getBody().total()).isEqualTo(2);
+    assertThat(response.getBody().groups()).containsExactly(CommodityGroup.builder()
         .code("01061900")
         .species(List.of(
             CommoditySpecies.builder().latinName("Nyctereutes procyonoides").commonName("Raccoon Dog")
@@ -73,11 +60,11 @@ class CommoditiesControllerIT extends IntegrationBase {
         restTemplate.getForEntity("/commodities?search=0102", CommoditySearchResponse.class);
 
     // Then
-    assertThat(response.getBody().getGroups()).hasSize(1);
-    CommodityGroup group = response.getBody().getGroups().get(0);
-    assertThat(group.getCode()).isEqualTo("0102");
-    assertThat(group.getSpecies()).hasSize(15);
-    assertThat(group.getSpecies().get(4))
+    assertThat(response.getBody().groups()).hasSize(1);
+    CommodityGroup group = response.getBody().groups().getFirst();
+    assertThat(group.code()).isEqualTo("0102");
+    assertThat(group.species()).hasSize(15);
+    assertThat(group.species().get(4))
         .isEqualTo(CommoditySpecies.builder().latinName("Bos taurus").commonName("Cattle or Cow")
             .build());
   }
@@ -89,8 +76,8 @@ class CommoditiesControllerIT extends IntegrationBase {
         "/commodities?search=dog&page=1&size=10", CommoditySearchResponse.class);
 
     // Then
-    assertThat(response.getBody().getPage()).isEqualTo(1);
-    assertThat(response.getBody().getSize()).isEqualTo(10);
+    assertThat(response.getBody().page()).isEqualTo(1);
+    assertThat(response.getBody().size()).isEqualTo(10);
     usingStub().verify(
         request().withMethod("GET").withPath(SEARCH_PATH)
             .withQueryStringParameter("q", "dog")
@@ -126,8 +113,8 @@ class CommoditiesControllerIT extends IntegrationBase {
   }
 
   @Test
-  void checkSpecies_returnsTheLinesMdmNoLongerListsUnderTheirCode() {
-    // Given: MDM lists "Bos sp." under 0102, not "Bos spp."
+  void checkSpecies_returnsTheLinesMdmDoesNotListUnderTheirCode() {
+    // Given
     SpeciesCheckRequest request = SpeciesCheckRequest.builder().lines(List.of(
         CommodityLine.builder().code("0102").latinName("Bos taurus").build(),
         CommodityLine.builder().code("0102").latinName("Bos spp.").build())).build();
@@ -138,7 +125,7 @@ class CommoditiesControllerIT extends IntegrationBase {
 
     // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody().getMissing())
+    assertThat(response.getBody().missing())
         .containsExactly(CommodityLine.builder().code("0102").latinName("Bos spp.").build());
     usingStub().verify(
         request().withMethod("GET").withPath(SPECIES_PATH)
@@ -149,12 +136,6 @@ class CommoditiesControllerIT extends IntegrationBase {
   }
 
   private void stubSearch(String term, String fixture) {
-    usingStub()
-        .when(request().withMethod("GET").withPath(SEARCH_PATH).withQueryStringParameter("q", term))
-        .respond(response()
-            .withStatusCode(200)
-            .withHeader("x-ms-middleware-request-id", "test-trace-id")
-            .withContentType(org.mockserver.model.MediaType.APPLICATION_JSON)
-            .withBody(getJsonFromFile(fixture)));
+    stubMdmGet(request().withPath(SEARCH_PATH).withQueryStringParameter("q", term), fixture);
   }
 }

@@ -1,38 +1,46 @@
 package uk.gov.defra.trade.imports.commodities;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import uk.gov.defra.trade.imports.client.MdmClient;
 import uk.gov.defra.trade.imports.client.MdmProductPage;
 import uk.gov.defra.trade.imports.client.MdmService;
 import uk.gov.defra.trade.imports.client.MdmSpecies;
+import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
 
 @ExtendWith(MockitoExtension.class)
 class SpeciesCheckServiceTest {
 
-  @Mock
-  private MdmService mdmService;
+  private static final long TWO_PAGES_OF_SPECIES = 120;
 
-  @InjectMocks
+  @Mock
+  private MdmClient mdmClient;
+
   private SpeciesCheckService service;
 
+  @BeforeEach
+  void setUp() {
+    service = new SpeciesCheckService(new MdmService(mdmClient, new MdmConfiguration()));
+  }
+
   @Test
-  void check_returnsTheLinesWhoseLatinNameMdmNoLongerListsUnderTheirCode() {
+  void check_returnsTheLinesWhoseLatinNameIsNotListedUnderTheirCode_matchingCaseExactly() {
     // Given
-    when(mdmService.getCommoditySpecies("0102", 0, 100))
-        .thenReturn(page(2, "Bos taurus", "Bubalus bubalis"));
+    givenMdmSpeciesPage("0102", 0, page(2, "Bos taurus", "Bubalus bubalis"));
 
     // When
     SpeciesCheckResponse response = service.check(request(
@@ -41,17 +49,15 @@ class SpeciesCheckServiceTest {
         line("0102", "bos taurus")));
 
     // Then
-    assertThat(response.getMissing())
+    assertThat(response.missing())
         .containsExactly(line("0102", "Bison bison"), line("0102", "bos taurus"));
   }
 
   @Test
   void check_asksMdmOncePerCode_andReadsEveryPage() {
-    // Given: MDM lists 120 species under 01061900, over two pages
-    when(mdmService.getCommoditySpecies("01061900", 0, 100))
-        .thenReturn(page(120, "Acinonyx sp.", "Addax"));
-    when(mdmService.getCommoditySpecies("01061900", 1, 100))
-        .thenReturn(page(120, "Pseudoryx", "Pudu"));
+    // Given
+    givenMdmSpeciesPage("01061900", 0, page(TWO_PAGES_OF_SPECIES, "Acinonyx sp.", "Addax"));
+    givenMdmSpeciesPage("01061900", 1, page(TWO_PAGES_OF_SPECIES, "Pseudoryx", "Pudu"));
 
     // When
     SpeciesCheckResponse response = service.check(request(
@@ -59,21 +65,21 @@ class SpeciesCheckServiceTest {
         line("01061900", "Pudu")));
 
     // Then
-    assertThat(response.getMissing()).isEmpty();
-    verify(mdmService, times(1)).getCommoditySpecies("01061900", 0, 100);
-    verify(mdmService, times(1)).getCommoditySpecies("01061900", 1, 100);
+    assertThat(response.missing()).isEmpty();
+    verify(mdmClient, times(1)).getCommoditySpecies(any(), eq("01061900"), any(), eq(0), eq(100));
+    verify(mdmClient, times(1)).getCommoditySpecies(any(), eq("01061900"), any(), eq(1), eq(100));
   }
 
   @Test
   void check_returnsEveryLine_forACodeMdmHasNoSpeciesFor() {
     // Given
-    when(mdmService.getCommoditySpecies("030111", 0, 100)).thenReturn(page(0));
+    givenMdmSpeciesPage("030111", 0, page(0));
 
     // When
     SpeciesCheckResponse response = service.check(request(line("030111", "Cyprinus carpio")));
 
     // Then
-    assertThat(response.getMissing()).containsExactly(line("030111", "Cyprinus carpio"));
+    assertThat(response.missing()).containsExactly(line("030111", "Cyprinus carpio"));
   }
 
   @Test
@@ -84,20 +90,25 @@ class SpeciesCheckServiceTest {
         line("0102", null)));
 
     // Then
-    assertThat(response.getMissing())
+    assertThat(response.missing())
         .containsExactly(line(null, "Bos taurus"), line("0102", null));
-    verify(mdmService, never()).getCommoditySpecies(anyString(), anyInt(), anyInt());
+    verifyNoInteractions(mdmClient);
   }
 
   @Test
   void check_returnsNothing_whenThereAreNoLines() {
     // When
     SpeciesCheckResponse noBody = service.check(null);
-    SpeciesCheckResponse noLines = service.check(new SpeciesCheckRequest());
+    SpeciesCheckResponse noLines = service.check(new SpeciesCheckRequest(null));
 
     // Then
-    assertThat(noBody.getMissing()).isEmpty();
-    assertThat(noLines.getMissing()).isEmpty();
+    assertThat(noBody.missing()).isEmpty();
+    assertThat(noLines.missing()).isEmpty();
+  }
+
+  private void givenMdmSpeciesPage(String code, int page, MdmProductPage<MdmSpecies> speciesPage) {
+    when(mdmClient.getCommoditySpecies(any(), eq(code), any(), eq(page), eq(100)))
+        .thenReturn(ResponseEntity.ok(speciesPage));
   }
 
   private static SpeciesCheckRequest request(CommodityLine... lines) {

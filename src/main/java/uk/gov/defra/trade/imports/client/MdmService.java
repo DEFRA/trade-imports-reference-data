@@ -83,9 +83,9 @@ public class MdmService {
     return pageOrEmpty(responseEntity.getBody(), "commodity species");
   }
 
-  private <T> MdmProductPage<T> pageOrEmpty(MdmProductPage<T> body, String request) {
-    if (body == null || body.getContent() == null) {
-      log.warn("MDM returned a null body for {} request", request);
+  private <T> MdmProductPage<T> pageOrEmpty(MdmProductPage<T> body, String requestName) {
+    if (body == null || body.content() == null) {
+      log.warn("MDM returned a null body for {} request", requestName);
       return MdmProductPage.<T>builder().content(List.of()).totalElements(0L).build();
     }
     return body;

@@ -19,30 +19,33 @@ public class SpeciesCheckService {
 
   private final MdmService mdmService;
 
-  /**
-   * Returns the lines whose Latin name MDM no longer lists under their code, matched exactly. A
-   * renamed species looks the same as a removed one.
-   */
   public SpeciesCheckResponse check(SpeciesCheckRequest request) {
     List<CommodityLine> lines =
-        request == null || request.getLines() == null ? List.of() : request.getLines();
-    Map<String, Set<String>> speciesByCode = new HashMap<>();
+        request == null || request.lines() == null ? List.of() : request.lines();
+    Map<String, Set<String>> latinNamesByCode = new HashMap<>();
     List<CommodityLine> missing = lines.stream()
-        .filter(line -> line.getCode() == null || line.getLatinName() == null
-            || !speciesByCode.computeIfAbsent(line.getCode(), this::speciesOf)
-                .contains(line.getLatinName()))
+        .filter(line -> isUnlisted(line, latinNamesByCode))
         .toList();
     return SpeciesCheckResponse.builder().missing(missing).build();
+  }
+
+  private boolean isUnlisted(CommodityLine line, Map<String, Set<String>> latinNamesByCode) {
+    if (line.code() == null || line.latinName() == null) {
+      return true;
+    }
+    return !latinNamesByCode.computeIfAbsent(line.code(), this::speciesOf)
+        .contains(line.latinName());
   }
 
   private Set<String> speciesOf(String code) {
     Set<String> names = new HashSet<>();
     int page = 0;
     while (true) {
-      MdmProductPage<MdmSpecies> result = mdmService.getCommoditySpecies(code, page, PAGE_SIZE);
-      result.getContent().forEach(species -> names.add(species.getSpeciesName()));
-      long total = result.getTotalElements() == null ? 0 : result.getTotalElements();
-      if (result.getContent().isEmpty() || (long) (page + 1) * PAGE_SIZE >= total) {
+      MdmProductPage<MdmSpecies> speciesPage =
+          mdmService.getCommoditySpecies(code, page, PAGE_SIZE);
+      speciesPage.content().forEach(species -> names.add(species.speciesName()));
+      long total = speciesPage.totalElements() == null ? 0 : speciesPage.totalElements();
+      if (speciesPage.content().isEmpty() || (long) (page + 1) * PAGE_SIZE >= total) {
         return names;
       }
       page++;

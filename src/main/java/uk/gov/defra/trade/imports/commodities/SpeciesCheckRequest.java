@@ -1,16 +1,12 @@
 package uk.gov.defra.trade.imports.commodities;
 
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class SpeciesCheckRequest {
+public record SpeciesCheckRequest(List<CommodityLine> lines) {
 
-  private List<CommodityLine> lines;
+  public SpeciesCheckRequest {
+    lines = lines == null ? null : List.copyOf(lines);
+  }
 }
