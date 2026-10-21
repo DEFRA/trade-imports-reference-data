@@ -1,0 +1,27 @@
+package uk.gov.defra.trade.imports.client;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import lombok.Builder;
+
+@Builder
+public record MdmProductSearchResult(
+    @JsonFormat(with = JsonFormat.Feature.READ_UNKNOWN_ENUM_VALUES_AS_NULL) ResultType resultType,
+    String speciesName,
+    String commonName,
+    String commodityCnCode,
+    String code,
+    String description,
+    Boolean isGerminal,
+    Boolean isSelectable,
+    Integer speciesCount,
+    @JsonProperty("scientificNames") List<MdmSpecies> species) {
+
+  public enum ResultType {
+    @JsonProperty("species")
+    SPECIES,
+    @JsonProperty("commodity")
+    COMMODITY
+  }
+}

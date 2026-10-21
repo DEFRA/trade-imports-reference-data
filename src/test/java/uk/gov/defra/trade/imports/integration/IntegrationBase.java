@@ -19,6 +19,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.mockserver.client.MockServerClient;
+import org.mockserver.model.HttpRequest;
 import org.mockserver.model.JsonBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,37 +153,36 @@ abstract class IntegrationBase {
   }
 
   protected void stubMdmPortsResponse() {
-    usingStub()
-        .when(request().withMethod("POST").withPath("/trade-auth/token"))
-        .respond(response()
-            .withStatusCode(200)
-            .withContentType(org.mockserver.model.MediaType.APPLICATION_JSON)
-            .withBody("{\"access_token\":\"test-token\",\"expires_on\":9999999999999}"));
-
-    usingStub()
-        .when(request().withMethod("GET").withPath("/mdm-service/mdm/trade/bcp/poes"))
-        .respond(response()
-            .withStatusCode(200)
-            .withHeader("x-ms-middleware-request-id", "test-trace-id")
-            .withContentType(org.mockserver.model.MediaType.APPLICATION_JSON)
-            .withBody(getJsonFromFile("integration/mdm-poe-response.json")));
+    stubTradeAuthToken();
+    stubMdmGet("/mdm-service/mdm/trade/bcp/poes", "integration/mdm-poe-response.json");
   }
 
   protected void stubMdmCountriesResponse() {
+    stubTradeAuthToken();
+    stubMdmGet("/mdm-service/mdm/geo/countries", "integration/mdm-countries-response.json");
+  }
+
+  protected void stubTradeAuthToken() {
     usingStub()
         .when(request().withMethod("POST").withPath("/trade-auth/token"))
         .respond(response()
             .withStatusCode(200)
             .withContentType(org.mockserver.model.MediaType.APPLICATION_JSON)
             .withBody("{\"access_token\":\"test-token\",\"expires_on\":9999999999999}"));
+  }
 
+  protected void stubMdmGet(String path, String fixture) {
+    stubMdmGet(request().withPath(path), fixture);
+  }
+
+  protected void stubMdmGet(HttpRequest mdmRequest, String fixture) {
     usingStub()
-        .when(request().withMethod("GET").withPath("/mdm-service/mdm/geo/countries"))
+        .when(mdmRequest.withMethod("GET"))
         .respond(response()
             .withStatusCode(200)
             .withHeader("x-ms-middleware-request-id", "test-trace-id")
             .withContentType(org.mockserver.model.MediaType.APPLICATION_JSON)
-            .withBody(getJsonFromFile("integration/mdm-countries-response.json")));
+            .withBody(getJsonFromFile(fixture)));
   }
 
   @SneakyThrows

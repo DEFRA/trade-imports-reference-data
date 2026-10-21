@@ -1,5 +1,6 @@
 package uk.gov.defra.trade.imports.client;
 
+import java.util.Collection;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ public class MdmService {
 
   private static final String MDM_API_TRACE_ID_KEY = "x-ms-middleware-request-id";
   private static final String SYSTEM = "GBNAG";
+  private static final String DATASET = "gbnag";
 
   private final MdmClient mdmClient;
   private final MdmConfiguration mdmConfiguration;
@@ -50,6 +52,44 @@ public class MdmService {
         .filter(c -> !"GB".equals(c.getEffectiveAlpha2()))
         .filter(c -> isIncludedInRequestedBlock(c, blocks))
         .toList();
+  }
+
+  public MdmProductPage<MdmProductSearchResult> searchProducts(String query, int page, int size) {
+    ResponseEntity<MdmProductPage<MdmProductSearchResult>> responseEntity = mdmClient.searchProducts(
+        mdmConfiguration.getOcpApimSubscriptionKey(), query, DATASET, page, size);
+    logTraceId(responseEntity);
+    return pageOrEmpty(responseEntity.getBody(), "product search", query);
+  }
+
+  public List<MdmCommodity> getCommodities(Collection<String> codes) {
+    if (codes.isEmpty()) {
+      return List.of();
+    }
+    ResponseEntity<List<MdmCommodity>> responseEntity = mdmClient.getCommodities(
+        mdmConfiguration.getOcpApimSubscriptionKey(), String.join(",", codes), DATASET);
+    logTraceId(responseEntity);
+    List<MdmCommodity> body = responseEntity.getBody();
+    if (body == null) {
+      log.warn("MDM returned a null body for commodities request for codes {}", codes);
+      return List.of();
+    }
+    return body;
+  }
+
+  public MdmProductPage<MdmSpecies> getCommoditySpecies(String code, int page, int size) {
+    ResponseEntity<MdmProductPage<MdmSpecies>> responseEntity = mdmClient.getCommoditySpecies(
+        mdmConfiguration.getOcpApimSubscriptionKey(), code, DATASET, page, size);
+    logTraceId(responseEntity);
+    return pageOrEmpty(responseEntity.getBody(), "commodity species", code);
+  }
+
+  private <T> MdmProductPage<T> pageOrEmpty(MdmProductPage<T> body, String requestName,
+      String requestedFor) {
+    if (body == null || body.content() == null) {
+      log.warn("MDM returned a null body for {} request for {}", requestName, requestedFor);
+      return MdmProductPage.<T>builder().content(List.of()).totalElements(0L).build();
+    }
+    return body;
   }
 
   private boolean isIncludedInRequestedBlock(MdmCountry country, String requestedBlock) {

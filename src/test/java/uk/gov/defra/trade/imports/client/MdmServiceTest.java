@@ -2,7 +2,9 @@ package uk.gov.defra.trade.imports.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -13,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,16 +36,10 @@ class MdmServiceTest {
     mdmService = new MdmService(mdmClient, mdmConfiguration);
   }
 
-  private ResponseEntity<List<MdmCountry>> responseWith(List<MdmCountry> body) {
+  private static <T> ResponseEntity<T> okWithTraceHeader(T body) {
     HttpHeaders headers = new HttpHeaders();
     headers.add(MDM_TRACE_HEADER, "trace-abc-123");
     return ResponseEntity.ok().headers(headers).body(body);
-  }
-
-  private ResponseEntity<MdmPortsResponse> poeResponseWith(List<MdmPortOfEntry> ports) {
-    HttpHeaders headers = new HttpHeaders();
-    headers.add(MDM_TRACE_HEADER, "trace-abc-123");
-    return ResponseEntity.ok().headers(headers).body(new MdmPortsResponse(ports));
   }
 
   @Test
@@ -50,7 +47,8 @@ class MdmServiceTest {
     List<MdmPortOfEntry> ports = List.of(
         MdmPortOfEntry.builder().id("1").code("GBABE").name("Aberdeen").build()
     );
-    when(mdmClient.getPorts(any(), any())).thenReturn(poeResponseWith(ports));
+    when(mdmClient.getPorts(any(), any()))
+        .thenReturn(okWithTraceHeader(new MdmPortsResponse(ports)));
 
     List<MdmPortOfEntry> result = mdmService.getPortsOfEntry();
 
@@ -61,11 +59,7 @@ class MdmServiceTest {
 
   @Test
   void getPortsOfEntry_returnsEmptyList_whenMdmBodyIsNull() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.add(MDM_TRACE_HEADER, "trace-null-body");
-    ResponseEntity<MdmPortsResponse> nullBodyResponse =
-        ResponseEntity.ok().headers(headers).body(null);
-    when(mdmClient.getPorts(any(), any())).thenReturn(nullBodyResponse);
+    when(mdmClient.getPorts(any(), any())).thenReturn(okWithTraceHeader(null));
 
     List<MdmPortOfEntry> result = mdmService.getPortsOfEntry();
 
@@ -74,11 +68,8 @@ class MdmServiceTest {
 
   @Test
   void getPortsOfEntry_returnsEmptyList_whenResultIsNull() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.add(MDM_TRACE_HEADER, "trace-null-result");
-    ResponseEntity<MdmPortsResponse> nullResultResponse =
-        ResponseEntity.ok().headers(headers).body(new MdmPortsResponse(null));
-    when(mdmClient.getPorts(any(), any())).thenReturn(nullResultResponse);
+    when(mdmClient.getPorts(any(), any()))
+        .thenReturn(okWithTraceHeader(new MdmPortsResponse(null)));
 
     List<MdmPortOfEntry> result = mdmService.getPortsOfEntry();
 
@@ -99,7 +90,8 @@ class MdmServiceTest {
 
   @Test
   void getPortsOfEntry_callsMdmWithGbnagSystem() {
-    when(mdmClient.getPorts(any(), any())).thenReturn(poeResponseWith(List.of()));
+    when(mdmClient.getPorts(any(), any()))
+        .thenReturn(okWithTraceHeader(new MdmPortsResponse(List.of())));
 
     mdmService.getPortsOfEntry();
 
@@ -116,7 +108,7 @@ class MdmServiceTest {
             .blocks(List.of(MdmBlock.builder().name("GBNAG_SPS_EX").includeCountry(true).build()))
             .build()
     );
-    when(mdmClient.getCountries(any(), any(), any())).thenReturn(responseWith(mdmCountries));
+    when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(mdmCountries));
 
     // When
     List<MdmCountry> result = mdmService.getCountries("GBNAG_SPS_EX");
@@ -146,7 +138,7 @@ class MdmServiceTest {
   @Test
   void getCountries_callsMdmWithGbnagSystemAndPassedBlocksParam() {
     // Given
-    when(mdmClient.getCountries(any(), any(), any())).thenReturn(responseWith(List.of()));
+    when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(List.of()));
 
     // When
     mdmService.getCountries("GBNAG_SPS_EX");
@@ -165,7 +157,7 @@ class MdmServiceTest {
             .blocks(List.of(MdmBlock.builder().name("GBNAG_SPS_EX").includeCountry(true).build()))
             .build()
     );
-    when(mdmClient.getCountries(any(), any(), any())).thenReturn(responseWith(mdmCountries));
+    when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(mdmCountries));
 
     // When
     List<MdmCountry> result = mdmService.getCountries("GBNAG_SPS_EX");
@@ -187,7 +179,7 @@ class MdmServiceTest {
             ))
             .build()
     );
-    when(mdmClient.getCountries(any(), any(), any())).thenReturn(responseWith(mdmCountries));
+    when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(mdmCountries));
 
     // When
     List<MdmCountry> result = mdmService.getCountries("GBNAG_SPS_EX");
@@ -199,17 +191,131 @@ class MdmServiceTest {
   @Test
   void getCountries_returnsEmptyList_whenMdmBodyIsNull() {
     // Given: MDM returns 200 but with a null body
-    HttpHeaders headers = new HttpHeaders();
-    headers.add(MDM_TRACE_HEADER, "trace-null-body");
-    ResponseEntity<List<MdmCountry>> nullBodyResponse =
-        ResponseEntity.ok().headers(headers).body(null);
-    when(mdmClient.getCountries(any(), any(), any())).thenReturn(nullBodyResponse);
+    when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(null));
 
     // When
     List<MdmCountry> result = mdmService.getCountries("GBNAG_SPS_EX");
 
     // Then: null body is treated as empty list rather than NPE
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  void searchProducts_callsMdmWithGbnagDatasetAndPaging() {
+    when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0, 100, 0L, 0)));
+
+    mdmService.searchProducts("cattle", 0, 100);
+
+    verify(mdmClient).searchProducts(SUBSCRIPTION_KEY, "cattle", "gbnag", 0, 100);
+  }
+
+  @Test
+  void searchProducts_returnsBodyFromMdmResponse() {
+    MdmProductSearchResult bosTaurus = MdmProductSearchResult.builder()
+        .resultType(ResultType.SPECIES)
+        .speciesName("Bos taurus")
+        .commonName("Cattle or Cow")
+        .commodityCnCode("0102")
+        .build();
+    when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(bosTaurus), 0, 100, 8L, 1)));
+
+    MdmProductPage<MdmProductSearchResult> productPage =
+        mdmService.searchProducts("cattle", 0, 100);
+
+    assertThat(productPage.content()).containsExactly(bosTaurus);
+    assertThat(productPage.totalElements()).isEqualTo(8L);
+  }
+
+  @Test
+  void searchProducts_returnsEmptyPage_whenMdmBodyIsNull() {
+    when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(null));
+
+    MdmProductPage<MdmProductSearchResult> productPage =
+        mdmService.searchProducts("cattle", 0, 100);
+
+    assertThat(productPage.content()).isEmpty();
+    assertThat(productPage.totalElements()).isZero();
+  }
+
+  @Test
+  void getCommodities_callsMdmWithCodesCommaSeparated() {
+    when(mdmClient.getCommodities(any(), any(), any())).thenReturn(ResponseEntity.ok(List.of()));
+
+    mdmService.getCommodities(List.of("0101", "0102", "01061900"));
+
+    verify(mdmClient).getCommodities(SUBSCRIPTION_KEY, "0101,0102,01061900", "gbnag");
+  }
+
+  @Test
+  void getCommodities_returnsBodyFromMdmResponse() {
+    MdmCommodity liveBovineAnimals = MdmCommodity.builder()
+        .code("0102")
+        .description("Live bovine animals")
+        .isGerminal(false)
+        .build();
+    when(mdmClient.getCommodities(any(), any(), any()))
+        .thenReturn(ResponseEntity.ok(List.of(liveBovineAnimals)));
+
+    List<MdmCommodity> commodities = mdmService.getCommodities(List.of("0102"));
+
+    assertThat(commodities).containsExactly(liveBovineAnimals);
+  }
+
+  @Test
+  void getCommodities_doesNotCallMdm_whenThereAreNoCodes() {
+    List<MdmCommodity> commodities = mdmService.getCommodities(List.of());
+
+    assertThat(commodities).isEmpty();
+    verifyNoInteractions(mdmClient);
+  }
+
+  @Test
+  void getCommodities_returnsEmptyList_whenMdmBodyIsNull() {
+    when(mdmClient.getCommodities(any(), any(), any())).thenReturn(ResponseEntity.ok(null));
+
+    List<MdmCommodity> commodities = mdmService.getCommodities(List.of("0102"));
+
+    assertThat(commodities).isEmpty();
+  }
+
+  @Test
+  void getCommoditySpecies_callsMdmWithCodeGbnagDatasetAndPaging() {
+    when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0, 500, 0L, null)));
+
+    mdmService.getCommoditySpecies("01061900", 1, 500);
+
+    verify(mdmClient).getCommoditySpecies(SUBSCRIPTION_KEY, "01061900", "gbnag", 1, 500);
+  }
+
+  @Test
+  void getCommoditySpecies_returnsBodyFromMdmResponse() {
+    MdmSpecies felisCatus = MdmSpecies.builder()
+        .speciesName("Felis catus")
+        .commonName("Domestic Cat")
+        .commodityCnCode("01061900")
+        .build();
+    when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(felisCatus), 0, 500, 120L, null)));
+
+    MdmProductPage<MdmSpecies> speciesPage = mdmService.getCommoditySpecies("01061900", 0, 500);
+
+    assertThat(speciesPage.content()).containsExactly(felisCatus);
+    assertThat(speciesPage.totalElements()).isEqualTo(120L);
+  }
+
+  @Test
+  void getCommoditySpecies_returnsEmptyPage_whenMdmBodyIsNull() {
+    when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(null));
+
+    MdmProductPage<MdmSpecies> speciesPage = mdmService.getCommoditySpecies("01061900", 0, 500);
+
+    assertThat(speciesPage.content()).isEmpty();
+    assertThat(speciesPage.totalElements()).isZero();
   }
 
   @Test
@@ -227,7 +333,7 @@ class MdmServiceTest {
             .blocks(List.of(MdmBlock.builder().name("OMR").includeCountry(true).build()))
             .build()
     );
-    when(mdmClient.getCountries(any(), any(), any())).thenReturn(responseWith(mdmCountries));
+    when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(mdmCountries));
 
     // When: no blocks filter applied
     List<MdmCountry> result = mdmService.getCountries(null);

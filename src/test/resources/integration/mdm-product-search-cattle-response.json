@@ -1,0 +1,44 @@
+{
+  "content": [
+    {
+      "resultType": "species",
+      "id": "0102-2de1a45e-21b3-b839-5c78-20daaf9b5fd4",
+      "speciesName": "Bos taurus",
+      "commonName": "Cattle or Cow",
+      "commonNames": [
+        "Cattle or Cow",
+        "Aurochs"
+      ],
+      "languageId": "la",
+      "eppoCode": "BOVSTA",
+      "faoCode": null,
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "05111000-2de1a45e-21b3-b839-5c78-20daaf9b5fd4",
+      "speciesName": "Bos taurus",
+      "commonName": "Cattle or Cow",
+      "commonNames": [
+        "Cattle or Cow",
+        "Aurochs"
+      ],
+      "languageId": "la",
+      "eppoCode": "BOVSTA",
+      "faoCode": null,
+      "commodityCnCode": "05111000",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    }
+  ],
+  "page": 0,
+  "size": 100,
+  "totalElements": 2,
+  "totalPages": 1
+}
