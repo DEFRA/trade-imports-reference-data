@@ -37,16 +37,13 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_groupsSpeciesByCodeInMdmOrder() {
-    // Given
     givenMdmSearchAnswers("dog", 0, 10, page(2,
         species("01061900", "Nyctereutes procyonoides", "Raccoon Dog"),
         species("01061900", "Canis familiaris", "Dog")));
     givenMdmCommodities(commodity("01061900", false));
 
-    // When
     CommoditySearchResponse response = service.search("dog", 0, 10);
 
-    // Then
     assertThat(response.total()).isEqualTo(2);
     assertThat(response.groups()).containsExactly(CommodityGroup.builder()
         .code("01061900")
@@ -59,7 +56,6 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_listsACommodityRowsSpeciesOncePerCode() {
-    // Given
     givenMdmSearchAnswers("horse", 0, 10, page(7,
         species("0101", "Equus cabalus", "Horse"),
         species("05119985", "Equus cabalus", "Horse"),
@@ -74,10 +70,8 @@ class CommoditySearchServiceTest {
     givenMdmCommodities(commodity("0101", false), commodity("05119985", true),
         commodity("01061900", false));
 
-    // When
     CommoditySearchResponse response = service.search("horse", 0, 10);
 
-    // Then
     assertThat(response.total()).isEqualTo(7);
     assertThat(response.groups()).containsExactly(
         CommodityGroup.builder()
@@ -97,7 +91,6 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_leavesOutTheCodesMdmFlagsAsGerminal() {
-    // Given
     givenMdmSearchAnswers("cattle", 0, 10, page(4,
         species("0102", "Bos taurus", "Cattle or Cow"),
         species("05119985", "Bos taurus", "Cattle or Cow"),
@@ -107,10 +100,8 @@ class CommoditySearchServiceTest {
     givenMdmCommodities(commodity("0102", false), commodity("05119985", true),
         commodity("05111000", true));
 
-    // When
     CommoditySearchResponse response = service.search("cattle", 0, 10);
 
-    // Then
     assertThat(response.groups()).containsExactly(CommodityGroup.builder()
         .code("0102")
         .species(List.of(
@@ -136,7 +127,6 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_listsNoMoreSpeciesThanThePageSize_whenACommodityRowHoldsMore() {
-    // Given
     givenMdmSearchAnswers("0102", 0, 2, page(1,
         commodityRow("0102", "Live bovine animals",
             MdmSpecies.builder().speciesName("Bos").commonName("Cattle").build(),
@@ -145,10 +135,8 @@ class CommoditySearchServiceTest {
         species("01061900", "Bos taurus", "Cattle or Cow")));
     givenMdmCommodities(commodity("0102", false), commodity("01061900", false));
 
-    // When
     CommoditySearchResponse response = service.search("0102", 0, 2);
 
-    // Then
     assertThat(response.groups()).containsExactly(CommodityGroup.builder()
         .code("0102")
         .species(List.of(
@@ -159,38 +147,30 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_asksMdmForAPageWithinItsLimits() {
-    // Given
     givenMdmSearchAnswers("dog", 0, 100, page(0));
 
-    // When
     CommoditySearchResponse response = service.search("dog", -1, 500);
 
-    // Then
     assertThat(response.page()).isZero();
     assertThat(response.size()).isEqualTo(100);
   }
 
   @Test
   void search_trimsTheTermBeforeSearching() {
-    // Given
     givenMdmSearchAnswers("dog", 0, 10, page(0));
 
-    // When
     CommoditySearchResponse response = service.search("  dog  ", 0, 10);
 
-    // Then
     assertThat(response.total()).isZero();
     assertThat(response.groups()).isEmpty();
   }
 
   @Test
   void search_returnsNothingWithoutCallingMdm_whenTheTermIsShorterThanTwoCharacters() {
-    // When
     CommoditySearchResponse blank = service.search("   ", 0, 10);
     CommoditySearchResponse missing = service.search(null, 0, 10);
     CommoditySearchResponse oneCharacter = service.search(" c ", 0, 10);
 
-    // Then
     assertThat(List.of(blank, missing, oneCharacter)).allSatisfy(response -> {
       assertThat(response.total()).isZero();
       assertThat(response.groups()).isEmpty();
