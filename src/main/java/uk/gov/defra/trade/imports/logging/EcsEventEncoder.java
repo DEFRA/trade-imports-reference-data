@@ -15,7 +15,7 @@ import org.slf4j.event.KeyValuePair;
  * without an error. The parent encoder writes MDC entries as flat keys and ignores key-value pairs,
  * so a line that needs {@code event.*} fields sets them as key-value pairs and this encoder nests
  * them. A {@link Number} value is written as a JSON number, which CDP needs for {@code
- * event.duration}. A line with no {@code event.*} key-value pairs is written exactly as the parent
+ * event.duration}; a non-finite one, which JSON cannot hold, is written as a string. A line with no {@code event.*} key-value pairs is written exactly as the parent
  * writes it.
  */
 public class EcsEventEncoder extends EcsEncoder {
@@ -53,12 +53,21 @@ public class EcsEventEncoder extends EcsEncoder {
   private static void appendValue(Object value, StringBuilder builder) {
     if (value == null) {
       builder.append("null");
-    } else if (value instanceof Number number) {
+    } else if (value instanceof Number number && isFinite(number)) {
       builder.append(number);
     } else {
       builder.append('"');
       JsonUtils.quoteAsString(value.toString(), builder);
       builder.append('"');
     }
+  }
+
+  // JSON has no NaN or Infinity, so a bare one would make the whole line unparseable.
+  private static boolean isFinite(Number number) {
+    return switch (number) {
+      case Double d -> Double.isFinite(d);
+      case Float f -> Float.isFinite(f);
+      default -> true;
+    };
   }
 }

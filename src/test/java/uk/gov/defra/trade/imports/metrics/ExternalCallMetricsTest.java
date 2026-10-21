@@ -176,9 +176,11 @@ class ExternalCallMetricsTest {
   }
 
   @Test
-  void record_shouldPutNoEventFieldsInTheMdc_soLaterLogLinesCarryNone() {
+  void record_shouldPutNoEventFieldsInTheMdc() {
+    // When
     metrics.recordCall(ExternalCall.MDM_GET_COUNTRIES, Duration.ofMillis(5), false);
 
+    // Then: anything left in the MDC would be written flat on every later line from this thread
     assertThat(MDC.get("event.category")).isNull();
     assertThat(MDC.get("event.action")).isNull();
     assertThat(MDC.get("event.outcome")).isNull();

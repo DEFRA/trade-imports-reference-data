@@ -125,28 +125,32 @@ class ExternalCallMetricsIT extends IntegrationBase {
   @Test
   void getCountries_shouldWriteTheMdmCallLineWithTheCallersTraceIdAndANestedEventObject()
       throws IOException {
+    // Given
     HttpHeaders headers = new HttpHeaders();
     headers.set("x-cdp-request-id", "trace-from-the-caller");
 
     try (var logs = CapturingLogAppender.attachedTo(ExternalCallMetrics.class)) {
+      // When
       restTemplate.exchange(
           "/countries", HttpMethod.GET, new HttpEntity<>(headers), String.class);
 
-      var event =
+      // Then: exactly one line for the call, encoded as logback-spring.xml configures
+      var mdmCallLines =
           logs.events().stream()
               .filter(e -> "mdm/get-countries".equals(keyValues(e).get("event.action")))
-              .findFirst()
-              .orElseThrow();
-      JsonNode line = new ObjectMapper().readTree(consoleEncoder().encode(event));
+              .toList();
+      assertThat(mdmCallLines).hasSize(1);
+      JsonNode line =
+          new ObjectMapper().readTree(consoleEncoder().encode(mdmCallLines.getFirst()));
 
-      assertThat(line.get("trace.id").asText()).isEqualTo("trace-from-the-caller");
-      assertThat(line.get("service.name").asText()).isEqualTo("trade-imports-reference-data");
+      assertThat(line.path("trace.id").asText()).isEqualTo("trace-from-the-caller");
+      assertThat(line.path("service.name").asText()).isEqualTo("trade-imports-reference-data");
       JsonNode eventObject = line.path("event");
       assertThat(eventObject.isObject()).as("a nested event object").isTrue();
-      assertThat(eventObject.get("category").asText()).isEqualTo("external-call");
-      assertThat(eventObject.get("action").asText()).isEqualTo("mdm/get-countries");
-      assertThat(eventObject.get("outcome").asText()).isEqualTo("success");
-      assertThat(eventObject.get("duration").isIntegralNumber()).isTrue();
+      assertThat(eventObject.path("category").asText()).isEqualTo("external-call");
+      assertThat(eventObject.path("action").asText()).isEqualTo("mdm/get-countries");
+      assertThat(eventObject.path("outcome").asText()).isEqualTo("success");
+      assertThat(eventObject.path("duration").isIntegralNumber()).isTrue();
       assertThat(line.has("event.action")).isFalse();
       assertThat(line.has("event.duration")).isFalse();
     }
