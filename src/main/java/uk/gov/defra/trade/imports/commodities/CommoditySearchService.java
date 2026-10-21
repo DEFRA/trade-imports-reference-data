@@ -12,12 +12,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uk.gov.defra.trade.imports.client.MdmCommodity;
 import uk.gov.defra.trade.imports.client.MdmProductPage;
 import uk.gov.defra.trade.imports.client.MdmProductSearchResult;
 import uk.gov.defra.trade.imports.client.MdmService;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class CommoditySearchService {
@@ -32,6 +34,8 @@ public class CommoditySearchService {
     int pageSize = Math.clamp(size, 1, MAXIMUM_PAGE_SIZE);
     String trimmedSearchTerm = searchTerm == null ? "" : searchTerm.trim();
     if (trimmedSearchTerm.length() < MINIMUM_SEARCH_LENGTH) {
+      log.info("Commodity search term '{}' is shorter than {} characters, so MDM is not asked",
+          trimmedSearchTerm, MINIMUM_SEARCH_LENGTH);
       return CommoditySearchResponse.builder()
           .total(0).page(pageNumber).size(pageSize).groups(List.of()).build();
     }
@@ -39,6 +43,10 @@ public class CommoditySearchService {
     MdmProductPage<MdmProductSearchResult> productPage =
         mdmService.searchProducts(trimmedSearchTerm, pageNumber, pageSize);
     Set<String> germinalCodes = germinalCodesAmong(productPage.content());
+    if (!germinalCodes.isEmpty()) {
+      log.info("Commodity search for '{}' leaves out germinal codes {}", trimmedSearchTerm,
+          germinalCodes);
+    }
     Map<String, List<CommoditySpecies>> speciesByCode = new LinkedHashMap<>();
     SpeciesLimit speciesLimit = new SpeciesLimit(pageSize);
     productPage.content().stream()
