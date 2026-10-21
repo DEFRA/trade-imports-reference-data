@@ -39,32 +39,26 @@ class SpeciesCheckServiceTest {
 
   @Test
   void check_returnsTheLinesWhoseLatinNameIsNotListedUnderTheirCode_matchingCaseExactly() {
-    // Given
     givenMdmSpeciesPage("0102", 0, page(2, "Bos taurus", "Bubalus bubalis"));
 
-    // When
     SpeciesCheckResponse response = service.check(request(
         line("0102", "Bos taurus"),
         line("0102", "Bison bison"),
         line("0102", "bos taurus")));
 
-    // Then
     assertThat(response.missing())
         .containsExactly(line("0102", "Bison bison"), line("0102", "bos taurus"));
   }
 
   @Test
   void check_asksMdmOncePerCode_andReadsEveryPage() {
-    // Given
     givenMdmSpeciesPage("01061900", 0, page(TWO_PAGES_OF_SPECIES, "Acinonyx sp.", "Addax"));
     givenMdmSpeciesPage("01061900", 1, page(TWO_PAGES_OF_SPECIES, "Pseudoryx", "Pudu"));
 
-    // When
     SpeciesCheckResponse response = service.check(request(
         line("01061900", "Addax"),
         line("01061900", "Pudu")));
 
-    // Then
     assertThat(response.missing()).isEmpty();
     verify(mdmClient, times(1)).getCommoditySpecies(any(), eq("01061900"), any(), eq(0), eq(100));
     verify(mdmClient, times(1)).getCommoditySpecies(any(), eq("01061900"), any(), eq(1), eq(100));
@@ -72,24 +66,19 @@ class SpeciesCheckServiceTest {
 
   @Test
   void check_returnsEveryLine_forACodeMdmHasNoSpeciesFor() {
-    // Given
     givenMdmSpeciesPage("030111", 0, page(0));
 
-    // When
     SpeciesCheckResponse response = service.check(request(line("030111", "Cyprinus carpio")));
 
-    // Then
     assertThat(response.missing()).containsExactly(line("030111", "Cyprinus carpio"));
   }
 
   @Test
   void check_returnsALineWithoutCallingMdm_whenItHasNoCodeOrLatinName() {
-    // When
     SpeciesCheckResponse response = service.check(request(
         line(null, "Bos taurus"),
         line("0102", null)));
 
-    // Then
     assertThat(response.missing())
         .containsExactly(line(null, "Bos taurus"), line("0102", null));
     verifyNoInteractions(mdmClient);
@@ -97,11 +86,9 @@ class SpeciesCheckServiceTest {
 
   @Test
   void check_returnsNothing_whenThereAreNoLines() {
-    // When
     SpeciesCheckResponse noBody = service.check(null);
     SpeciesCheckResponse noLines = service.check(new SpeciesCheckRequest(null));
 
-    // Then
     assertThat(noBody.missing()).isEmpty();
     assertThat(noLines.missing()).isEmpty();
   }
