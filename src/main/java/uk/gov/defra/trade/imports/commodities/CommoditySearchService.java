@@ -5,10 +5,15 @@ import static uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultTyp
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import uk.gov.defra.trade.imports.client.MdmCommodity;
 import uk.gov.defra.trade.imports.client.MdmProductPage;
 import uk.gov.defra.trade.imports.client.MdmProductSearchResult;
 import uk.gov.defra.trade.imports.client.MdmService;
@@ -19,7 +24,6 @@ public class CommoditySearchService {
 
   static final int MINIMUM_SEARCH_LENGTH = 2;
   static final int MAXIMUM_PAGE_SIZE = 100;
-  private static final String LIVE_ANIMALS_CHAPTER = "01";
 
   private final MdmService mdmService;
 
@@ -34,9 +38,12 @@ public class CommoditySearchService {
 
     MdmProductPage<MdmProductSearchResult> productPage =
         mdmService.searchProducts(trimmedSearchTerm, pageNumber, pageSize);
+    Set<String> germinalCodes = germinalCodesAmong(productPage.content());
     Map<String, List<CommoditySpecies>> speciesByCode = new LinkedHashMap<>();
     SpeciesLimit speciesLimit = new SpeciesLimit(pageSize);
-    productPage.content().forEach(row -> addRow(speciesByCode, row, speciesLimit));
+    productPage.content().stream()
+        .filter(row -> !germinalCodes.contains(codeOf(row)))
+        .forEach(row -> addRow(speciesByCode, row, speciesLimit));
 
     List<CommodityGroup> groups = speciesByCode.entrySet().stream()
         .filter(entry -> !entry.getValue().isEmpty())
@@ -48,22 +55,46 @@ public class CommoditySearchService {
         .total(total).page(pageNumber).size(pageSize).groups(groups).build();
   }
 
-  private static void addRow(Map<String, List<CommoditySpecies>> speciesByCode,
-      MdmProductSearchResult row, SpeciesLimit speciesLimit) {
-    if (row.resultType() == SPECIES && isLiveAnimalCode(row.commodityCnCode())) {
-      addSpecies(speciesByCode, row.commodityCnCode(), row.speciesName(), row.commonName(),
-          speciesLimit);
-    } else if (row.resultType() == COMMODITY && isLiveAnimalCode(row.code())) {
-      speciesByCode.computeIfAbsent(row.code(), code -> new ArrayList<>());
-      if (row.species() != null) {
-        row.species().forEach(species -> addSpecies(speciesByCode, row.code(),
-            species.speciesName(), species.commonName(), speciesLimit));
-      }
-    }
+  private Set<String> germinalCodesAmong(List<MdmProductSearchResult> rows) {
+    Set<String> codes = rows.stream()
+        .map(CommoditySearchService::codeOf)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
+    return mdmService.getCommodities(codes).stream()
+        .filter(CommoditySearchService::isGerminal)
+        .map(MdmCommodity::code)
+        .collect(Collectors.toSet());
   }
 
-  private static boolean isLiveAnimalCode(String code) {
-    return code != null && code.startsWith(LIVE_ANIMALS_CHAPTER);
+  private static boolean isGerminal(MdmCommodity commodity) {
+    return Boolean.TRUE.equals(commodity.isGerminal());
+  }
+
+  private static String codeOf(MdmProductSearchResult row) {
+    if (row.resultType() == SPECIES) {
+      return row.commodityCnCode();
+    }
+    if (row.resultType() == COMMODITY) {
+      return row.code();
+    }
+    return null;
+  }
+
+  private static void addRow(Map<String, List<CommoditySpecies>> speciesByCode,
+      MdmProductSearchResult row, SpeciesLimit speciesLimit) {
+    String code = codeOf(row);
+    if (code == null) {
+      return;
+    }
+    if (row.resultType() == SPECIES) {
+      addSpecies(speciesByCode, code, row.speciesName(), row.commonName(), speciesLimit);
+      return;
+    }
+    speciesByCode.computeIfAbsent(code, key -> new ArrayList<>());
+    if (row.species() != null) {
+      row.species().forEach(species -> addSpecies(speciesByCode, code,
+          species.speciesName(), species.commonName(), speciesLimit));
+    }
   }
 
   private static void addSpecies(Map<String, List<CommoditySpecies>> speciesByCode, String code,

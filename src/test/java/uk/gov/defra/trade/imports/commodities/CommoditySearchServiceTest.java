@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import uk.gov.defra.trade.imports.client.MdmClient;
+import uk.gov.defra.trade.imports.client.MdmCommodity;
 import uk.gov.defra.trade.imports.client.MdmProductPage;
 import uk.gov.defra.trade.imports.client.MdmProductSearchResult;
 import uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType;
@@ -40,6 +41,7 @@ class CommoditySearchServiceTest {
     givenMdmSearchAnswers("dog", 0, 10, page(2,
         species("01061900", "Nyctereutes procyonoides", "Raccoon Dog"),
         species("01061900", "Canis familiaris", "Dog")));
+    givenMdmCommodities(commodity("01061900", false));
 
     // When
     CommoditySearchResponse response = service.search("dog", 0, 10);
@@ -69,6 +71,8 @@ class CommoditySearchServiceTest {
             MdmSpecies.builder().speciesName("Equus cabalus*asinus").build(),
             MdmSpecies.builder().speciesName("Equus cabalus").commonName("Horse").build(),
             MdmSpecies.builder().speciesName("Equus asinus").commonName("Donkey").build())));
+    givenMdmCommodities(commodity("0101", false), commodity("05119985", true),
+        commodity("01061900", false));
 
     // When
     CommoditySearchResponse response = service.search("horse", 0, 10);
@@ -92,7 +96,7 @@ class CommoditySearchServiceTest {
   }
 
   @Test
-  void search_leavesOutCodesOutsideTheLiveAnimalsChapter() {
+  void search_leavesOutTheCodesMdmFlagsAsGerminal() {
     // Given
     givenMdmSearchAnswers("cattle", 0, 10, page(4,
         species("0102", "Bos taurus", "Cattle or Cow"),
@@ -100,6 +104,8 @@ class CommoditySearchServiceTest {
         species("05111000", "Bos taurus", "Cattle or Cow"),
         commodityRow("05111000", "Bovine semen",
             MdmSpecies.builder().speciesName("Bos").commonName("Cattle").build())));
+    givenMdmCommodities(commodity("0102", false), commodity("05119985", true),
+        commodity("05111000", true));
 
     // When
     CommoditySearchResponse response = service.search("cattle", 0, 10);
@@ -113,6 +119,22 @@ class CommoditySearchServiceTest {
   }
 
   @Test
+  void search_listsACodeOutsideTheLiveAnimalsChapter_whenMdmDoesNotFlagItGerminal() {
+    givenMdmSearchAnswers("cattle", 0, 10, page(2,
+        species("0102", "Bos taurus", "Cattle or Cow"),
+        species("05111000", "Bos taurus", "Cattle or Cow")));
+    givenMdmCommodities(commodity("0102", false), commodity("05111000", null));
+
+    CommoditySearchResponse response = service.search("cattle", 0, 10);
+
+    CommoditySpecies cattle =
+        CommoditySpecies.builder().latinName("Bos taurus").commonName("Cattle or Cow").build();
+    assertThat(response.groups()).containsExactly(
+        CommodityGroup.builder().code("0102").species(List.of(cattle)).build(),
+        CommodityGroup.builder().code("05111000").species(List.of(cattle)).build());
+  }
+
+  @Test
   void search_listsNoMoreSpeciesThanThePageSize_whenACommodityRowHoldsMore() {
     // Given
     givenMdmSearchAnswers("0102", 0, 2, page(1,
@@ -121,6 +143,7 @@ class CommoditySearchServiceTest {
             MdmSpecies.builder().speciesName("Bubalus").commonName("water buffalos").build(),
             MdmSpecies.builder().speciesName("Bos taurus").commonName("Cattle or Cow").build()),
         species("01061900", "Bos taurus", "Cattle or Cow")));
+    givenMdmCommodities(commodity("0102", false), commodity("01061900", false));
 
     // When
     CommoditySearchResponse response = service.search("0102", 0, 2);
@@ -179,6 +202,15 @@ class CommoditySearchServiceTest {
       MdmProductPage<MdmProductSearchResult> productPage) {
     when(mdmClient.searchProducts(any(), eq(searchTerm), any(), eq(page), eq(size)))
         .thenReturn(ResponseEntity.ok(productPage));
+  }
+
+  private void givenMdmCommodities(MdmCommodity... commodities) {
+    when(mdmClient.getCommodities(any(), any(), any()))
+        .thenReturn(ResponseEntity.ok(List.of(commodities)));
+  }
+
+  private static MdmCommodity commodity(String code, Boolean isGerminal) {
+    return MdmCommodity.builder().code(code).isGerminal(isGerminal).build();
   }
 
   private static MdmProductPage<MdmProductSearchResult> page(long total,

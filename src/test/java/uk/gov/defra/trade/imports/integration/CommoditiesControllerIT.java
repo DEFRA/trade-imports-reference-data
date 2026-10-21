@@ -23,6 +23,7 @@ class CommoditiesControllerIT extends IntegrationBase {
   private static final String SEARCH_PATH = "/mdm-service/mdm/trade/product/search";
   private static final String SPECIES_PATH =
       "/mdm-service/mdm/trade/product/commodities/0102/species";
+  private static final String COMMODITIES_PATH = "/mdm-service/mdm/trade/product/commodities";
 
   @Autowired
   private TestRestTemplate restTemplate;
@@ -32,7 +33,28 @@ class CommoditiesControllerIT extends IntegrationBase {
     stubTradeAuthToken();
     stubSearch("dog", "integration/mdm-product-search-dog-response.json");
     stubSearch("0102", "integration/mdm-product-search-0102-response.json");
+    stubSearch("cattle", "integration/mdm-product-search-cattle-response.json");
     stubMdmGet(SPECIES_PATH, "integration/mdm-product-species-0102-response.json");
+    stubMdmGet(COMMODITIES_PATH, "integration/mdm-commodities-response.json");
+  }
+
+  @Test
+  void searchCommodities_leavesOutTheCodesMdmFlagsAsGerminal() {
+    // When
+    ResponseEntity<CommoditySearchResponse> response =
+        restTemplate.getForEntity("/commodities?search=cattle", CommoditySearchResponse.class);
+
+    // Then
+    assertThat(response.getBody().groups()).containsExactly(CommodityGroup.builder()
+        .code("0102")
+        .species(List.of(
+            CommoditySpecies.builder().latinName("Bos taurus").commonName("Cattle or Cow").build()))
+        .build());
+    usingStub().verify(
+        request().withMethod("GET").withPath(COMMODITIES_PATH)
+            .withQueryStringParameter("codes", "0102,05111000")
+            .withQueryStringParameter("dataset", "gbnag"),
+        VerificationTimes.exactly(1));
   }
 
   @Test
