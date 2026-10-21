@@ -82,13 +82,29 @@ class CommoditiesControllerIT extends IntegrationBase {
         restTemplate.getForEntity("/commodities?search=0102", CommoditySearchResponse.class);
 
     // Then
-    assertThat(response.getBody().groups()).hasSize(1);
-    CommodityGroup group = response.getBody().groups().getFirst();
-    assertThat(group.code()).isEqualTo("0102");
-    assertThat(group.species()).hasSize(15);
-    assertThat(group.species().get(4))
-        .isEqualTo(CommoditySpecies.builder().latinName("Bos taurus").commonName("Cattle or Cow")
-            .build());
+    assertThat(response.getBody().groups()).containsExactly(CommodityGroup.builder()
+        .code("0102")
+        .species(List.of(
+            species("Bos", "Cattle"),
+            species("Bubalus", "water buffalos"),
+            species("Poephagus spp.", "Animals"),
+            species("Bison bonasus", "European Bison"),
+            species("Bos taurus", "Cattle or Cow"),
+            species("Bibos spp.", "Cattle"),
+            species("Novibos spp.", "Cattle"),
+            species("Bos sp.", "Cattle"),
+            species("Bubalus bubalis", "Water Buffalo"),
+            species("Elephas maximus", "Asian Elephant"),
+            species("Loxodonta africana", "African elephant"),
+            species("Bison", "Bison"),
+            species("Bison bison", "Bisons Spp"),
+            species("Ovibos", "Muskoxen"),
+            species("Syncerus", "African Buffaloes")))
+        .build());
+  }
+
+  private static CommoditySpecies species(String latinName, String commonName) {
+    return CommoditySpecies.builder().latinName(latinName).commonName(commonName).build();
   }
 
   @Test
