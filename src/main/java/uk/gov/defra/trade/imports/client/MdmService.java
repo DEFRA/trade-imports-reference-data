@@ -58,7 +58,7 @@ public class MdmService {
     ResponseEntity<MdmProductPage<MdmProductSearchResult>> responseEntity = mdmClient.searchProducts(
         mdmConfiguration.getOcpApimSubscriptionKey(), query, DATASET, page, size);
     logTraceId(responseEntity);
-    return pageOrEmpty(responseEntity.getBody(), "product search");
+    return pageOrEmpty(responseEntity.getBody(), "product search", query);
   }
 
   public List<MdmCommodity> getCommodities(Collection<String> codes) {
@@ -70,7 +70,7 @@ public class MdmService {
     logTraceId(responseEntity);
     List<MdmCommodity> body = responseEntity.getBody();
     if (body == null) {
-      log.warn("MDM returned a null body for commodities request");
+      log.warn("MDM returned a null body for commodities request for codes {}", codes);
       return List.of();
     }
     return body;
@@ -80,12 +80,13 @@ public class MdmService {
     ResponseEntity<MdmProductPage<MdmSpecies>> responseEntity = mdmClient.getCommoditySpecies(
         mdmConfiguration.getOcpApimSubscriptionKey(), code, DATASET, page, size);
     logTraceId(responseEntity);
-    return pageOrEmpty(responseEntity.getBody(), "commodity species");
+    return pageOrEmpty(responseEntity.getBody(), "commodity species", code);
   }
 
-  private <T> MdmProductPage<T> pageOrEmpty(MdmProductPage<T> body, String requestName) {
+  private <T> MdmProductPage<T> pageOrEmpty(MdmProductPage<T> body, String requestName,
+      String requestedFor) {
     if (body == null || body.content() == null) {
-      log.warn("MDM returned a null body for {} request", requestName);
+      log.warn("MDM returned a null body for {} request for {}", requestName, requestedFor);
       return MdmProductPage.<T>builder().content(List.of()).totalElements(0L).build();
     }
     return body;
