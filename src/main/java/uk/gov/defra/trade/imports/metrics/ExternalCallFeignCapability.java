@@ -14,14 +14,6 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/**
- * Measures every Feign call at the transport, rather than in {@code MdmService}.
- *
- * <p>{@code MdmClientInterceptor} fetches the Trade token inside the MDM request's interceptor, so
- * timing {@code MdmService} would add token time to MDM's figures on every expired-token call.
- * Interceptors have already run before {@link Client#execute}, so each call is timed on its own.
- * One application-level capability covers every Feign client.
- */
 @Component
 @RequiredArgsConstructor
 public class ExternalCallFeignCapability implements Capability {
