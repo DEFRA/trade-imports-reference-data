@@ -44,27 +44,21 @@ class CommoditiesControllerTest {
 
   @Test
   void searchCommodities_shouldCountOneCommoditySearchLookup() {
-    // Given
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0, 10, 0L, 0)));
 
-    // When
     ResponseEntity<CommoditySearchResponse> response = controller.searchCommodities("dog", 0, 10);
 
-    // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(lookupTypesCounted()).containsExactly("commodity-search");
   }
 
   @Test
   void checkSpecies_shouldCountOneSpeciesCheckLookup() {
-    // Given
     SpeciesCheckRequest request = SpeciesCheckRequest.builder().lines(List.of()).build();
 
-    // When
     ResponseEntity<SpeciesCheckResponse> response = controller.checkSpecies(request);
 
-    // Then
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(lookupTypesCounted()).containsExactly("species-check");
   }
