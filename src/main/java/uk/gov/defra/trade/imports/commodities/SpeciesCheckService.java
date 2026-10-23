@@ -21,10 +21,10 @@ public class SpeciesCheckService {
 
   public SpeciesCheckResponse check(SpeciesCheckRequest request) {
     Map<String, Set<String>> latinNamesByCode = new HashMap<>();
-    List<CommodityLine> missing = request.lines().stream()
+    List<CommodityLine> unlisted = request.lines().stream()
         .filter(line -> isUnlisted(line, latinNamesByCode))
         .toList();
-    return SpeciesCheckResponse.builder().missing(missing).build();
+    return SpeciesCheckResponse.builder().unlisted(unlisted).build();
   }
 
   private boolean isUnlisted(CommodityLine line, Map<String, Set<String>> latinNamesByCode) {

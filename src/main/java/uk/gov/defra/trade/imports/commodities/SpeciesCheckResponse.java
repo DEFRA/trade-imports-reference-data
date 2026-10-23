@@ -11,9 +11,9 @@ import lombok.Builder;
 public record SpeciesCheckResponse(
     @Schema(description = "Lines whose species MDM does not list under their code",
         requiredMode = REQUIRED)
-    List<CommodityLine> missing) {
+    List<CommodityLine> unlisted) {
 
   public SpeciesCheckResponse {
-    missing = List.copyOf(missing);
+    unlisted = List.copyOf(unlisted);
   }
 }

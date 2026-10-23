@@ -156,7 +156,7 @@ class CommoditiesControllerIT extends IntegrationBase {
         "/commodities/species-check", request, SpeciesCheckResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody().missing())
+    assertThat(response.getBody().unlisted())
         .containsExactly(CommodityLine.builder().code("0102").latinName("Bos spp.").build());
     usingStub().verify(
         request().withMethod("GET").withPath(SPECIES_PATH)
@@ -181,7 +181,7 @@ class CommoditiesControllerIT extends IntegrationBase {
         .extracting(JsonNode::asText).containsExactly("string", "null");
     assertThat(schemas.at("/SpeciesCheckRequest/required"))
         .extracting(JsonNode::asText).containsExactly("lines");
-    assertThat(schemas.at("/SpeciesCheckResponse/properties/missing/description").asText())
+    assertThat(schemas.at("/SpeciesCheckResponse/properties/unlisted/description").asText())
         .isEqualTo("Lines whose species MDM does not list under their code");
     assertThat(schemas.at("/CommoditySearchResponse/required"))
         .extracting(JsonNode::asText)

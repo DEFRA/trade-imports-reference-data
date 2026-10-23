@@ -48,7 +48,7 @@ class SpeciesCheckServiceTest {
         line("0102", "Bison bison"),
         line("0102", "bos taurus")));
 
-    assertThat(response.missing())
+    assertThat(response.unlisted())
         .containsExactly(line("0102", "Bison bison"), line("0102", "bos taurus"));
   }
 
@@ -61,7 +61,7 @@ class SpeciesCheckServiceTest {
         line("01061900", "Addax"),
         line("01061900", "Pudu")));
 
-    assertThat(response.missing()).isEmpty();
+    assertThat(response.unlisted()).isEmpty();
     verify(mdmClient, times(1)).getCommoditySpecies(any(), eq("01061900"), any(), eq(0), eq(100));
     verify(mdmClient, times(1)).getCommoditySpecies(any(), eq("01061900"), any(), eq(1), eq(100));
   }
@@ -72,7 +72,7 @@ class SpeciesCheckServiceTest {
 
     SpeciesCheckResponse response = service.check(request(line("030111", "Cyprinus carpio")));
 
-    assertThat(response.missing()).containsExactly(line("030111", "Cyprinus carpio"));
+    assertThat(response.unlisted()).containsExactly(line("030111", "Cyprinus carpio"));
   }
 
   @Test
@@ -89,7 +89,7 @@ class SpeciesCheckServiceTest {
   void check_returnsNothingWithoutCallingMdm_whenThereAreNoLines() {
     SpeciesCheckResponse response = service.check(request());
 
-    assertThat(response.missing()).isEmpty();
+    assertThat(response.unlisted()).isEmpty();
     verifyNoInteractions(mdmClient);
   }
 
