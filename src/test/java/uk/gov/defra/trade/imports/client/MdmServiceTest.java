@@ -340,7 +340,6 @@ class MdmServiceTest {
     MdmSpecies felisCatus = MdmSpecies.builder()
         .latinName("Felis catus")
         .commonName("Domestic Cat")
-        .commodityCnCode("01061900")
         .build();
     when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(felisCatus), 120L)));
