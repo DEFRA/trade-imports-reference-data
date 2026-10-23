@@ -78,10 +78,11 @@ class CommoditiesControllerIT extends IntegrationBase {
   }
 
   @Test
-  void searchCommodities_listsTheSpeciesOfACommodityFoundByCode() {
+  void searchCommodities_listsAndCountsTheSpeciesOfACommodityFoundByCode() {
     ResponseEntity<CommoditySearchResponse> response =
         restTemplate.getForEntity("/commodities?q=0102", CommoditySearchResponse.class);
 
+    assertThat(response.getBody().total()).isEqualTo(15);
     assertThat(response.getBody().groups()).containsExactly(CommodityGroup.builder()
         .code("0102")
         .species(List.of(

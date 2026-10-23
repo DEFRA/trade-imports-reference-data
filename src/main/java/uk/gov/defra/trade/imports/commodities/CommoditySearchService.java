@@ -3,7 +3,6 @@ package uk.gov.defra.trade.imports.commodities;
 import static uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType.COMMODITY;
 import static uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType.SPECIES;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -11,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,20 +45,14 @@ public class CommoditySearchService {
       log.info("Commodity search for '{}' leaves out germinal codes {}", trimmedSearchTerm,
           germinalCodes);
     }
-    Map<String, List<CommoditySpecies>> speciesByCode = new LinkedHashMap<>();
-    SpeciesLimit speciesLimit = new SpeciesLimit(size);
-    productPage.content().stream()
-        .filter(row -> !germinalCodes.contains(codeOf(row)))
-        .forEach(row -> addRow(speciesByCode, row, speciesLimit));
+    List<SpeciesMatch> matches = speciesMatchesIn(productPage.content(), germinalCodes);
 
-    List<CommodityGroup> groups = speciesByCode.entrySet().stream()
-        .filter(entry -> !entry.getValue().isEmpty())
-        .map(entry -> CommodityGroup.builder().code(entry.getKey()).species(entry.getValue()).build())
-        .toList();
-
-    long total = productPage.totalElements();
     return CommoditySearchResponse.builder()
-        .total(total).page(page).size(size).groups(groups).build();
+        .total(matches.size())
+        .page(page)
+        .size(size)
+        .groups(groupsOf(matches.stream().limit(size).toList()))
+        .build();
   }
 
   private Set<String> germinalCodesAmong(List<MdmProductSearchResult> rows) {
@@ -86,52 +80,46 @@ public class CommoditySearchService {
     return null;
   }
 
-  private static void addRow(Map<String, List<CommoditySpecies>> speciesByCode,
-      MdmProductSearchResult row, SpeciesLimit speciesLimit) {
+  private static List<SpeciesMatch> speciesMatchesIn(List<MdmProductSearchResult> rows,
+      Set<String> germinalCodes) {
+    Map<List<String>, SpeciesMatch> matchesByCodeAndLatinName = new LinkedHashMap<>();
+    rows.stream()
+        .filter(row -> !germinalCodes.contains(codeOf(row)))
+        .flatMap(CommoditySearchService::speciesMatchesOf)
+        .filter(match -> match.latinName() != null)
+        .forEach(match -> matchesByCodeAndLatinName.putIfAbsent(
+            List.of(match.code(), match.latinName()), match));
+    return List.copyOf(matchesByCodeAndLatinName.values());
+  }
+
+  private static Stream<SpeciesMatch> speciesMatchesOf(MdmProductSearchResult row) {
     String code = codeOf(row);
     if (code == null) {
-      return;
+      return Stream.empty();
     }
     if (row.resultType() == SPECIES) {
-      addSpecies(speciesByCode, code, row.latinName(), row.commonName(), speciesLimit);
-      return;
+      return Stream.of(new SpeciesMatch(code, row.latinName(), row.commonName()));
     }
-    speciesByCode.computeIfAbsent(code, key -> new ArrayList<>());
-    if (row.species() != null) {
-      row.species().forEach(species -> addSpecies(speciesByCode, code,
-          species.latinName(), species.commonName(), speciesLimit));
+    if (row.species() == null) {
+      return Stream.empty();
     }
+    return row.species().stream()
+        .map(species -> new SpeciesMatch(code, species.latinName(), species.commonName()));
   }
 
-  private static void addSpecies(Map<String, List<CommoditySpecies>> speciesByCode, String code,
-      String latinName, String commonName, SpeciesLimit speciesLimit) {
-    List<CommoditySpecies> species = speciesByCode.computeIfAbsent(code, key -> new ArrayList<>());
-    if (speciesLimit.isReached() || latinName == null || isAlreadyListed(species, latinName)) {
-      return;
-    }
-    species.add(CommoditySpecies.builder().latinName(latinName).commonName(commonName).build());
-    speciesLimit.countOne();
+  private static List<CommodityGroup> groupsOf(List<SpeciesMatch> matches) {
+    return matches.stream()
+        .collect(Collectors.groupingBy(SpeciesMatch::code, LinkedHashMap::new,
+            Collectors.mapping(SpeciesMatch::species, Collectors.toList())))
+        .entrySet().stream()
+        .map(entry -> CommodityGroup.builder().code(entry.getKey()).species(entry.getValue()).build())
+        .toList();
   }
 
-  private static boolean isAlreadyListed(List<CommoditySpecies> species, String latinName) {
-    return species.stream().anyMatch(listed -> latinName.equals(listed.latinName()));
-  }
+  private record SpeciesMatch(String code, String latinName, String commonName) {
 
-  private static final class SpeciesLimit {
-
-    private final int limit;
-    private int count;
-
-    private SpeciesLimit(int limit) {
-      this.limit = limit;
-    }
-
-    private boolean isReached() {
-      return count >= limit;
-    }
-
-    private void countOne() {
-      count++;
+    private CommoditySpecies species() {
+      return CommoditySpecies.builder().latinName(latinName).commonName(commonName).build();
     }
   }
 }
