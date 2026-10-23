@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -163,6 +164,28 @@ class CommoditiesControllerIT extends IntegrationBase {
             .withQueryStringParameter("page", "0")
             .withQueryStringParameter("size", "100"),
         VerificationTimes.exactly(1));
+  }
+
+  @Test
+  void openApiDocument_describesBothCommodityEndpointsAndTheirFields() {
+    JsonNode document = restTemplate.getForObject("/v3/api-docs", JsonNode.class);
+
+    JsonNode schemas = document.path("components").path("schemas");
+    assertThat(document.at("/paths/~1commodities/get/summary").asText())
+        .isEqualTo("Search species by name or commodity code");
+    assertThat(document.at("/paths/~1commodities~1species-check/post/summary").asText())
+        .isEqualTo("Check chosen species are still listed under their codes");
+    assertThat(schemas.at("/CommoditySpecies/required"))
+        .extracting(JsonNode::asText).containsExactly("latinName");
+    assertThat(schemas.at("/CommoditySpecies/properties/commonName/type"))
+        .extracting(JsonNode::asText).containsExactly("string", "null");
+    assertThat(schemas.at("/SpeciesCheckRequest/required"))
+        .extracting(JsonNode::asText).containsExactly("lines");
+    assertThat(schemas.at("/SpeciesCheckResponse/properties/missing/description").asText())
+        .isEqualTo("Lines whose species MDM does not list under their code");
+    assertThat(schemas.at("/CommoditySearchResponse/required"))
+        .extracting(JsonNode::asText)
+        .containsExactlyInAnyOrder("total", "page", "size", "groups");
   }
 
   @Test
