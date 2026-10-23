@@ -28,7 +28,7 @@ import uk.gov.defra.trade.imports.commodities.SpeciesCheckResponse;
 class CommoditiesControllerIT extends IntegrationBase {
 
   private static final String SEARCH_PATH = "/mdm-service/mdm/trade/product/search";
-  private static final String SPECIES_PATH =
+  private static final String SPECIES_OF_0102_PATH =
       "/mdm-service/mdm/trade/product/commodities/0102/species";
   private static final String COMMODITIES_PATH = "/mdm-service/mdm/trade/product/commodities";
 
@@ -41,7 +41,7 @@ class CommoditiesControllerIT extends IntegrationBase {
     stubSearch("dog", "integration/mdm-product-search-dog-response.json");
     stubSearch("0102", "integration/mdm-product-search-0102-response.json");
     stubSearch("cattle", "integration/mdm-product-search-cattle-response.json");
-    stubMdmGet(SPECIES_PATH, "integration/mdm-product-species-0102-response.json");
+    stubMdmGet(SPECIES_OF_0102_PATH, "integration/mdm-product-species-0102-response.json");
     stubMdmGet(COMMODITIES_PATH, "integration/mdm-commodities-response.json");
   }
 
@@ -159,7 +159,7 @@ class CommoditiesControllerIT extends IntegrationBase {
     assertThat(response.getBody().unlisted())
         .containsExactly(CommodityLine.builder().code("0102").latinName("Bos spp.").build());
     usingStub().verify(
-        request().withMethod("GET").withPath(SPECIES_PATH)
+        request().withMethod("GET").withPath(SPECIES_OF_0102_PATH)
             .withQueryStringParameter("dataset", "gbnag")
             .withQueryStringParameter("page", "0")
             .withQueryStringParameter("size", "100"),
@@ -232,7 +232,7 @@ class CommoditiesControllerIT extends IntegrationBase {
         "/commodities/species-check", new HttpEntity<>(body, headers), String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-    usingStub().verify(request().withPath(SPECIES_PATH), VerificationTimes.never());
+    usingStub().verify(request().withPath(SPECIES_OF_0102_PATH), VerificationTimes.never());
   }
 
   private void stubSearch(String term, String fixture) {
