@@ -104,7 +104,6 @@ class MdmServiceTest {
 
   @Test
   void getCountries_returnsBodyFromMdmResponse() {
-    // Given
     List<MdmCountry> mdmCountries = List.of(
         MdmCountry.builder()
             .effectiveAlpha2("FR")
@@ -114,17 +113,14 @@ class MdmServiceTest {
     );
     when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(mdmCountries));
 
-    // When
     List<MdmCountry> result = mdmService.getCountries("GBNAG_SPS_EX");
 
-    // Then
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getEffectiveAlpha2()).isEqualTo("FR");
   }
 
   @Test
   void getCountries_stillReturnsCountries_whenMdmTraceHeaderIsAbsent() {
-    // Given: response has no x-ms-middleware-request-id header
     List<MdmCountry> mdmCountries = List.of(
         MdmCountry.builder()
             .effectiveAlpha2("FR")
@@ -134,26 +130,22 @@ class MdmServiceTest {
     );
     when(mdmClient.getCountries(any(), any(), any())).thenReturn(ResponseEntity.ok(mdmCountries));
 
-    // When / Then: missing trace header is logged as a warning; countries are still returned
     List<MdmCountry> result = mdmService.getCountries("GBNAG_SPS_EX");
+
     assertThat(result).hasSize(1);
   }
 
   @Test
   void getCountries_callsMdmWithGbnagSystemAndPassedBlocksParam() {
-    // Given
     when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(List.of()));
 
-    // When
     mdmService.getCountries("GBNAG_SPS_EX");
 
-    // Then: system is always "GBNAG" and blocks param is passed through
     verify(mdmClient).getCountries(SUBSCRIPTION_KEY, "GBNAG", "GBNAG_SPS_EX");
   }
 
   @Test
   void getCountries_filtersOutUk() {
-    // Given: MDM returns a UK country
     List<MdmCountry> mdmCountries = List.of(
         MdmCountry.builder()
             .effectiveAlpha2("GB")
@@ -163,16 +155,13 @@ class MdmServiceTest {
     );
     when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(mdmCountries));
 
-    // When
     List<MdmCountry> result = mdmService.getCountries("GBNAG_SPS_EX");
 
-    // Then: UK is filtered out
     assertThat(result).isEmpty();
   }
 
   @Test
   void getCountries_filtersOutCountriesWhereGbnagSpsExBlockHasIncludeCountryFalse() {
-    // Given: MDM returns a country with includeCountry=false for requested block
     List<MdmCountry> mdmCountries = List.of(
         MdmCountry.builder()
             .effectiveAlpha2("MQ")
@@ -185,10 +174,8 @@ class MdmServiceTest {
     );
     when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(mdmCountries));
 
-    // When
     List<MdmCountry> result = mdmService.getCountries("GBNAG_SPS_EX");
 
-    // Then: country with includeCountry=false for requested block is filtered out
     assertThat(result).isEmpty();
   }
 
@@ -362,7 +349,6 @@ class MdmServiceTest {
 
   @Test
   void getCountries_doesNotApplyBlockFilter_whenBlocksParamIsNull() {
-    // Given: MDM returns multiple non-UK countries
     List<MdmCountry> mdmCountries = List.of(
         MdmCountry.builder()
             .effectiveAlpha2("DE")
@@ -377,10 +363,8 @@ class MdmServiceTest {
     );
     when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(mdmCountries));
 
-    // When: no blocks filter applied
     List<MdmCountry> result = mdmService.getCountries(null);
 
-    // Then: all non-UK countries returned regardless of blocks
     assertThat(result).hasSize(2);
   }
 }
