@@ -27,7 +27,6 @@ public class MdmService {
   public List<MdmPortOfEntry> getPortsOfEntry() {
     ResponseEntity<MdmPortsResponse> responseEntity =
         mdmClient.getPorts(mdmConfiguration.getOcpApimSubscriptionKey(), SYSTEM);
-    logTraceId(responseEntity);
     MdmPortsResponse body = bodyFrom(responseEntity, "ports-of-entry", SYSTEM);
     if (body.getResult() == null) {
       throw new MdmUnavailableException(
@@ -42,7 +41,6 @@ public class MdmService {
 
     ResponseEntity<List<MdmCountry>> responseEntity =
         mdmClient.getCountries(ocpApimSubscriptionKey, SYSTEM, blocks);
-    logTraceId(responseEntity);
 
     return bodyFrom(responseEntity, "countries", blocks).stream()
         .filter(c -> !"GB".equals(c.getEffectiveAlpha2()))
@@ -53,7 +51,6 @@ public class MdmService {
   public MdmProductPage<MdmProductSearchResult> searchProducts(String query, int page, int size) {
     ResponseEntity<MdmProductPage<MdmProductSearchResult>> responseEntity = mdmClient.searchProducts(
         mdmConfiguration.getOcpApimSubscriptionKey(), query, DATASET, page, size);
-    logTraceId(responseEntity);
     return pageFrom(responseEntity, "product search", query);
   }
 
@@ -63,19 +60,18 @@ public class MdmService {
     }
     ResponseEntity<List<MdmCommodity>> responseEntity = mdmClient.getCommodities(
         mdmConfiguration.getOcpApimSubscriptionKey(), String.join(",", codes), DATASET);
-    logTraceId(responseEntity);
     return bodyFrom(responseEntity, "commodities", codes);
   }
 
   public MdmProductPage<MdmSpecies> getCommoditySpecies(String code, int page, int size) {
     ResponseEntity<MdmProductPage<MdmSpecies>> responseEntity = mdmClient.getCommoditySpecies(
         mdmConfiguration.getOcpApimSubscriptionKey(), code, DATASET, page, size);
-    logTraceId(responseEntity);
     return pageFrom(responseEntity, "commodity species", code);
   }
 
   private static <T> T bodyFrom(ResponseEntity<T> responseEntity, String requestName,
       Object requestedFor) {
+    logTraceId(responseEntity, requestName, requestedFor);
     T body = responseEntity.getBody();
     if (body == null) {
       throw new MdmUnavailableException(
@@ -105,13 +101,14 @@ public class MdmService {
                  && Boolean.TRUE.equals(b.getIncludeCountry()));
   }
 
-  private void logTraceId(ResponseEntity<?> responseEntity) {
+  private static void logTraceId(ResponseEntity<?> responseEntity, String requestName,
+      Object requestedFor) {
     List<String> traceHeaders = responseEntity.getHeaders().get(MDM_API_TRACE_ID_KEY);
     if (traceHeaders == null || traceHeaders.isEmpty()) {
-      log.warn("No MDM trace id returned");
+      log.warn("No MDM trace id returned for {} request for {}", requestName, requestedFor);
       return;
     }
-    traceHeaders.stream().findFirst()
-        .ifPresent(mdmApiTraceId -> log.info("MDM trace id for this call is: {}", mdmApiTraceId));
+    log.info("MDM trace id for {} request for {} is {}", requestName, requestedFor,
+        traceHeaders.getFirst());
   }
 }
