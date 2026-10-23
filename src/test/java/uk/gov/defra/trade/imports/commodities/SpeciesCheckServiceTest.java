@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -82,6 +83,29 @@ class SpeciesCheckServiceTest {
         .getCommoditySpecies(any(), eq("01061900"), any(), eq(0), eq(PAGE_SIZE));
     verify(mdmClient, times(1))
         .getCommoditySpecies(any(), eq("01061900"), any(), eq(1), eq(PAGE_SIZE));
+  }
+
+  @Test
+  void check_stopsReadingPages_atTheFirstEmptyPage() {
+    givenMdmSpeciesPage("01061900", 0, page(300, "Addax"));
+    givenMdmSpeciesPage("01061900", 1, page(300));
+
+    SpeciesCheckResponse response = service.check(request(line("01061900", "Addax")));
+
+    assertThat(response.unlisted()).isEmpty();
+    verify(mdmClient, never())
+        .getCommoditySpecies(any(), eq("01061900"), any(), eq(2), eq(PAGE_SIZE));
+  }
+
+  @Test
+  void check_throwsMdmUnavailable_whenMdmSendsASpeciesPageWithNoTotal() {
+    givenMdmSpeciesPage("0102", 0, MdmProductPage.<MdmSpecies>builder()
+        .content(List.of(MdmSpecies.builder().latinName("Bos taurus").build()))
+        .build());
+    SpeciesCheckRequest request = request(line("0102", "Bos taurus"));
+
+    assertThatThrownBy(() -> service.check(request))
+        .isInstanceOf(MdmUnavailableException.class);
   }
 
   @Test
