@@ -36,7 +36,6 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleValidationException_shouldReturnBadRequestWithFieldErrors() {
-        // Given
         String traceId = "test-trace-123";
         MDC.put("trace.id", traceId);
 
@@ -45,10 +44,8 @@ class GlobalExceptionHandlerTest {
             new FieldError("notification", "commodity", "must not be blank")
         );
 
-        // When
         ProblemDetail problemDetail = exceptionHandler.handleValidationException(exception);
 
-        // Then
         assertThat(problemDetail).isNotNull();
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
         assertThat(problemDetail.getTitle()).isEqualTo("Validation Error");
@@ -66,18 +63,14 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleValidationException_shouldHandleNullTraceId() {
-        // Given - no trace ID in MDC
         MethodArgumentNotValidException exception = createValidationException(
             new FieldError("notification", "origin", "must not be null")
         );
 
-        // When
         ProblemDetail problemDetail = exceptionHandler.handleValidationException(exception);
 
-        // Then
         assertThat(problemDetail).isNotNull();
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
-        // When traceId is null, the property is never set, so properties may be null or not contain traceId
         Map<String, Object> properties = problemDetail.getProperties();
         if (properties != null) {
             assertThat(properties).doesNotContainKey("traceId");
@@ -86,15 +79,12 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleNotFoundException_shouldReturnNotFound() {
-        // Given
         String traceId = "test-trace-456";
         MDC.put("trace.id", traceId);
         NotFoundException exception = new NotFoundException("Notification with id 12345 not found");
 
-        // When
         ProblemDetail problemDetail = exceptionHandler.handleNotFoundException(exception);
 
-        // Then
         assertThat(problemDetail).isNotNull();
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
         assertThat(problemDetail.getTitle()).isEqualTo("Resource Not Found");
@@ -106,16 +96,12 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleNotFoundException_shouldHandleNullTraceId() {
-        // Given - no trace ID in MDC
         NotFoundException exception = new NotFoundException("Resource not found");
 
-        // When
         ProblemDetail problemDetail = exceptionHandler.handleNotFoundException(exception);
 
-        // Then
         assertThat(problemDetail).isNotNull();
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
-        // When traceId is null, the property is never set, so properties may be null or not contain traceId
         Map<String, Object> properties = problemDetail.getProperties();
         if (properties != null) {
             assertThat(properties).doesNotContainKey("traceId");
@@ -124,15 +110,12 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleConflictException_shouldReturnConflict() {
-        // Given
         String traceId = "test-trace-789";
         MDC.put("trace.id", traceId);
         ConflictException exception = new ConflictException("Notification with reference DRAFT.IMP.2026.001 already exists");
 
-        // When
         ProblemDetail problemDetail = exceptionHandler.handleConflictException(exception);
 
-        // Then
         assertThat(problemDetail).isNotNull();
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
         assertThat(problemDetail.getTitle()).isEqualTo("Resource Conflict");
@@ -144,16 +127,12 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleConflictException_shouldHandleNullTraceId() {
-        // Given - no trace ID in MDC
         ConflictException exception = new ConflictException("Resource conflict");
 
-        // When
         ProblemDetail problemDetail = exceptionHandler.handleConflictException(exception);
 
-        // Then
         assertThat(problemDetail).isNotNull();
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
-        // When traceId is null, the property is never set, so properties may be null or not contain traceId
         Map<String, Object> properties = problemDetail.getProperties();
         if (properties != null) {
             assertThat(properties).doesNotContainKey("traceId");
@@ -162,15 +141,12 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleException_shouldReturnInternalServerError_forRuntimeException() {
-        // Given
         String traceId = "test-trace-999";
         MDC.put("trace.id", traceId);
         RuntimeException exception = new RuntimeException("Unexpected database error");
 
-        // When
         ProblemDetail problemDetail = exceptionHandler.handleException(exception);
 
-        // Then
         assertThat(problemDetail).isNotNull();
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
         assertThat(problemDetail.getTitle()).isEqualTo("Internal Server Error");
@@ -182,51 +158,57 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleException_shouldReturnInternalServerError_forIllegalStateException() {
-        // Given
         IllegalStateException exception = new IllegalStateException("Invalid state");
 
-        // When
         ProblemDetail problemDetail = exceptionHandler.handleException(exception);
 
-        // Then
         assertThat(problemDetail).isNotNull();
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
 
     @Test
     void handleException_shouldReturnInternalServerError_forIllegalArgumentException() {
-        // Given
         IllegalArgumentException exception = new IllegalArgumentException("Invalid argument");
 
-        // When
         ProblemDetail problemDetail = exceptionHandler.handleException(exception);
 
-        // Then
         assertThat(problemDetail).isNotNull();
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
 
     @Test
     void handleException_shouldHandleNullTraceId() {
-        // Given - no trace ID in MDC
         RuntimeException exception = new RuntimeException("Error");
 
-        // When
         ProblemDetail problemDetail = exceptionHandler.handleException(exception);
 
-        // Then
         assertThat(problemDetail).isNotNull();
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        // When traceId is null, the property is never set, so properties may be null or not contain traceId
         Map<String, Object> properties = problemDetail.getProperties();
         if (properties != null) {
             assertThat(properties).doesNotContainKey("traceId");
         }
     }
 
+    @Test
+    void handleMdmUnavailableException_shouldReturnServiceUnavailable() {
+        MDC.put("trace.id", "test-trace-503");
+        MdmUnavailableException exception =
+            new MdmUnavailableException("MDM returned no body for commodities request for [0102]");
+
+        ProblemDetail problemDetail = exceptionHandler.handleMdmUnavailableException(exception);
+
+        assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE.value());
+        assertThat(problemDetail.getTitle()).isEqualTo("Service Unavailable");
+        assertThat(problemDetail.getDetail())
+            .isEqualTo("Reference data is unavailable. Please try again later.");
+        assertThat(problemDetail.getType())
+            .isEqualTo(URI.create("https://api.cdp.defra.cloud/problems/service-unavailable"));
+        assertThat(problemDetail.getProperties()).containsEntry("traceId", "test-trace-503");
+    }
+
     private MethodArgumentNotValidException createValidationException(FieldError... fieldErrors) {
         try {
-            // Create a real MethodParameter with an actual method to avoid NullPointerException
             Method testMethod = this.getClass().getDeclaredMethod("setUp");
             MethodParameter methodParameter = new MethodParameter(testMethod, -1);
 

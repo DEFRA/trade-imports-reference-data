@@ -97,6 +97,26 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
+  @ExceptionHandler(MdmUnavailableException.class)
+  public ProblemDetail handleMdmUnavailableException(MdmUnavailableException ex) {
+    String traceId = MDC.get(MDC_TRACE_ID);
+    log.warn("MDM unavailable (trace: {})", traceId, ex);
+
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "Reference data is unavailable. Please try again later."
+    );
+
+    problemDetail.setType(URI.create("https://api.cdp.defra.cloud/problems/service-unavailable"));
+    problemDetail.setTitle("Service Unavailable");
+
+    if (traceId != null) {
+      problemDetail.setProperty("traceId", traceId);
+    }
+
+    return problemDetail;
+  }
+
   /**
    * Handle unexpected runtime errors (500 Internal Server Error).
    */

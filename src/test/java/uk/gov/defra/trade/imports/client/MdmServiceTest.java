@@ -1,6 +1,7 @@
 package uk.gov.defra.trade.imports.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
@@ -17,6 +18,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
+import uk.gov.defra.trade.imports.exceptions.MdmUnavailableException;
 
 @ExtendWith(MockitoExtension.class)
 class MdmServiceTest {
@@ -58,22 +60,22 @@ class MdmServiceTest {
   }
 
   @Test
-  void getPortsOfEntry_returnsEmptyList_whenMdmBodyIsNull() {
+  void getPortsOfEntry_throwsMdmUnavailable_whenMdmBodyIsNull() {
     when(mdmClient.getPorts(any(), any())).thenReturn(okWithTraceHeader(null));
 
-    List<MdmPortOfEntry> result = mdmService.getPortsOfEntry();
-
-    assertThat(result).isEmpty();
+    assertThatThrownBy(() -> mdmService.getPortsOfEntry())
+        .isInstanceOf(MdmUnavailableException.class)
+        .hasMessage("MDM returned no body for ports-of-entry request for GBNAG");
   }
 
   @Test
-  void getPortsOfEntry_returnsEmptyList_whenResultIsNull() {
+  void getPortsOfEntry_throwsMdmUnavailable_whenResultIsNull() {
     when(mdmClient.getPorts(any(), any()))
         .thenReturn(okWithTraceHeader(new MdmPortsResponse(null)));
 
-    List<MdmPortOfEntry> result = mdmService.getPortsOfEntry();
-
-    assertThat(result).isEmpty();
+    assertThatThrownBy(() -> mdmService.getPortsOfEntry())
+        .isInstanceOf(MdmUnavailableException.class)
+        .hasMessage("MDM returned a ports-of-entry body with no result for GBNAG");
   }
 
   @Test
@@ -189,15 +191,12 @@ class MdmServiceTest {
   }
 
   @Test
-  void getCountries_returnsEmptyList_whenMdmBodyIsNull() {
-    // Given: MDM returns 200 but with a null body
+  void getCountries_throwsMdmUnavailable_whenMdmBodyIsNull() {
     when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(null));
 
-    // When
-    List<MdmCountry> result = mdmService.getCountries("GBNAG_SPS_EX");
-
-    // Then: null body is treated as empty list rather than NPE
-    assertThat(result).isEmpty();
+    assertThatThrownBy(() -> mdmService.getCountries("GBNAG_SPS_EX"))
+        .isInstanceOf(MdmUnavailableException.class)
+        .hasMessage("MDM returned no body for countries request for GBNAG_SPS_EX");
   }
 
   @Test
@@ -229,15 +228,33 @@ class MdmServiceTest {
   }
 
   @Test
-  void searchProducts_returnsEmptyPage_whenMdmBodyIsNull() {
+  void searchProducts_throwsMdmUnavailable_whenMdmBodyIsNull() {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(null));
 
-    MdmProductPage<MdmProductSearchResult> productPage =
-        mdmService.searchProducts("cattle", 0, 100);
+    assertThatThrownBy(() -> mdmService.searchProducts("cattle", 0, 100))
+        .isInstanceOf(MdmUnavailableException.class)
+        .hasMessage("MDM returned no body for product search request for cattle");
+  }
 
-    assertThat(productPage.content()).isEmpty();
-    assertThat(productPage.totalElements()).isZero();
+  @Test
+  void searchProducts_throwsMdmUnavailable_whenMdmContentIsNull() {
+    when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(null, 0, 100, 5L, 1)));
+
+    assertThatThrownBy(() -> mdmService.searchProducts("cattle", 0, 100))
+        .isInstanceOf(MdmUnavailableException.class)
+        .hasMessage("MDM returned a product search page with no content for cattle");
+  }
+
+  @Test
+  void searchProducts_throwsMdmUnavailable_whenMdmTotalIsNull() {
+    when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0, 100, null, 1)));
+
+    assertThatThrownBy(() -> mdmService.searchProducts("cattle", 0, 100))
+        .isInstanceOf(MdmUnavailableException.class)
+        .hasMessage("MDM returned a product search page with no total for cattle");
   }
 
   @Test
@@ -273,12 +290,12 @@ class MdmServiceTest {
   }
 
   @Test
-  void getCommodities_returnsEmptyList_whenMdmBodyIsNull() {
+  void getCommodities_throwsMdmUnavailable_whenMdmBodyIsNull() {
     when(mdmClient.getCommodities(any(), any(), any())).thenReturn(ResponseEntity.ok(null));
 
-    List<MdmCommodity> commodities = mdmService.getCommodities(List.of("0102"));
-
-    assertThat(commodities).isEmpty();
+    assertThatThrownBy(() -> mdmService.getCommodities(List.of("0102")))
+        .isInstanceOf(MdmUnavailableException.class)
+        .hasMessage("MDM returned no body for commodities request for [0102]");
   }
 
   @Test
@@ -308,14 +325,13 @@ class MdmServiceTest {
   }
 
   @Test
-  void getCommoditySpecies_returnsEmptyPage_whenMdmBodyIsNull() {
+  void getCommoditySpecies_throwsMdmUnavailable_whenMdmBodyIsNull() {
     when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(null));
 
-    MdmProductPage<MdmSpecies> speciesPage = mdmService.getCommoditySpecies("01061900", 0, 500);
-
-    assertThat(speciesPage.content()).isEmpty();
-    assertThat(speciesPage.totalElements()).isZero();
+    assertThatThrownBy(() -> mdmService.getCommoditySpecies("01061900", 0, 500))
+        .isInstanceOf(MdmUnavailableException.class)
+        .hasMessage("MDM returned no body for commodity species request for 01061900");
   }
 
   @Test

@@ -44,7 +44,7 @@ public class SpeciesCheckService {
       MdmProductPage<MdmSpecies> speciesPage =
           mdmService.getCommoditySpecies(code, page, PAGE_SIZE);
       speciesPage.content().forEach(species -> names.add(species.speciesName()));
-      long total = speciesPage.totalElements() == null ? 0 : speciesPage.totalElements();
+      long total = speciesPage.totalElements();
       if (speciesPage.content().isEmpty() || (long) (page + 1) * PAGE_SIZE >= total) {
         return names;
       }

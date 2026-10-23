@@ -1,6 +1,7 @@
 package uk.gov.defra.trade.imports.commodities;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -21,6 +22,7 @@ import uk.gov.defra.trade.imports.client.MdmProductPage;
 import uk.gov.defra.trade.imports.client.MdmService;
 import uk.gov.defra.trade.imports.client.MdmSpecies;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
+import uk.gov.defra.trade.imports.exceptions.MdmUnavailableException;
 
 @ExtendWith(MockitoExtension.class)
 class SpeciesCheckServiceTest {
@@ -71,6 +73,16 @@ class SpeciesCheckServiceTest {
     SpeciesCheckResponse response = service.check(request(line("030111", "Cyprinus carpio")));
 
     assertThat(response.missing()).containsExactly(line("030111", "Cyprinus carpio"));
+  }
+
+  @Test
+  void check_throwsMdmUnavailable_whenMdmSendsNoSpeciesPageForACode() {
+    when(mdmClient.getCommoditySpecies(any(), eq("0102"), any(), eq(0), eq(100)))
+        .thenReturn(ResponseEntity.ok(null));
+    SpeciesCheckRequest request = request(line("0102", "Bos taurus"));
+
+    assertThatThrownBy(() -> service.check(request))
+        .isInstanceOf(MdmUnavailableException.class);
   }
 
   @Test

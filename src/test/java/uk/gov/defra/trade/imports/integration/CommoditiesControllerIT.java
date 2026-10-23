@@ -2,6 +2,7 @@ package uk.gov.defra.trade.imports.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -156,6 +157,21 @@ class CommoditiesControllerIT extends IntegrationBase {
             .withQueryStringParameter("page", "0")
             .withQueryStringParameter("size", "100"),
         VerificationTimes.exactly(1));
+  }
+
+  @Test
+  void checkSpecies_answersServiceUnavailable_whenMdmSendsNoBody() {
+    usingStub()
+        .when(request().withMethod("GET")
+            .withPath("/mdm-service/mdm/trade/product/commodities/0103/species"))
+        .respond(response().withStatusCode(200));
+    SpeciesCheckRequest request = SpeciesCheckRequest.builder().lines(List.of(
+        CommodityLine.builder().code("0103").latinName("Sus scrofa").build())).build();
+
+    ResponseEntity<String> response = restTemplate.postForEntity(
+        "/commodities/species-check", request, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
   }
 
   private void stubSearch(String term, String fixture) {

@@ -58,7 +58,7 @@ public class CommoditySearchService {
         .map(entry -> CommodityGroup.builder().code(entry.getKey()).species(entry.getValue()).build())
         .toList();
 
-    long total = productPage.totalElements() == null ? 0 : productPage.totalElements();
+    long total = productPage.totalElements();
     return CommoditySearchResponse.builder()
         .total(total).page(pageNumber).size(pageSize).groups(groups).build();
   }
