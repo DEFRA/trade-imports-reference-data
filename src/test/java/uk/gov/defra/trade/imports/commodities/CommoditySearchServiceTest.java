@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType;
 import uk.gov.defra.trade.imports.client.MdmService;
 import uk.gov.defra.trade.imports.client.MdmSpecies;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
+import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 
 @ExtendWith(MockitoExtension.class)
 class CommoditySearchServiceTest {
@@ -144,6 +146,25 @@ class CommoditySearchServiceTest {
             CommoditySpecies.builder().latinName("Bos").commonName("Cattle").build(),
             CommoditySpecies.builder().latinName("Bubalus").commonName("water buffalos").build()))
         .build());
+  }
+
+  @Test
+  void search_logsTheRowsAndSpeciesItLeavesOut() {
+    givenMdmSearchAnswers("bos", 0, 1, page(4,
+        MdmProductSearchResult.builder().code("0103").latinName("Sus scrofa").build(),
+        commodityRow("0102",
+            MdmSpecies.builder().commonName("Cattle").build(),
+            MdmSpecies.builder().latinName("Bos").build(),
+            MdmSpecies.builder().latinName("Bubalus").build())));
+    givenMdmCommodities(commodity("0102", false));
+
+    try (var logs = CapturingLogAppender.attachedTo(CommoditySearchService.class)) {
+      service.search("bos", 0, 1);
+
+      assertThat(logs.events()).extracting(ILoggingEvent::getFormattedMessage).containsExactly(
+          "Commodity search for 'bos' leaves out 1 MDM rows with no code, 1 species with no "
+              + "Latin name and 1 species beyond the page size");
+    }
   }
 
   @Test

@@ -45,14 +45,31 @@ public class CommoditySearchService {
       log.info("Commodity search for '{}' leaves out germinal codes {}", trimmedSearchTerm,
           germinalCodes);
     }
-    List<SpeciesMatch> matches = speciesMatchesIn(productPage.content(), germinalCodes);
+    List<SpeciesMatch> candidates = speciesMatchesIn(productPage.content(), germinalCodes);
+    List<SpeciesMatch> matches = namedAndDistinct(candidates);
+    List<SpeciesMatch> listed = matches.stream().limit(size).toList();
+    logWhatIsLeftOut(trimmedSearchTerm, productPage.content(), candidates,
+        matches.size() - listed.size());
 
     return CommoditySearchResponse.builder()
         .total(matches.size())
         .page(page)
         .size(size)
-        .groups(groupsOf(matches.stream().limit(size).toList()))
+        .groups(groupsOf(listed))
         .build();
+  }
+
+  private static void logWhatIsLeftOut(String searchTerm, List<MdmProductSearchResult> rows,
+      List<SpeciesMatch> candidates, int speciesBeyondPageSize) {
+    long rowsWithNoCode = rows.stream().filter(row -> codeOf(row) == null).count();
+    long speciesWithNoLatinName =
+        candidates.stream().filter(match -> match.latinName() == null).count();
+    if (rowsWithNoCode == 0 && speciesWithNoLatinName == 0 && speciesBeyondPageSize == 0) {
+      return;
+    }
+    log.info("Commodity search for '{}' leaves out {} MDM rows with no code, {} species with no "
+            + "Latin name and {} species beyond the page size", searchTerm, rowsWithNoCode,
+        speciesWithNoLatinName, speciesBeyondPageSize);
   }
 
   private Set<String> germinalCodesAmong(List<MdmProductSearchResult> rows) {
@@ -82,10 +99,15 @@ public class CommoditySearchService {
 
   private static List<SpeciesMatch> speciesMatchesIn(List<MdmProductSearchResult> rows,
       Set<String> germinalCodes) {
-    Map<List<String>, SpeciesMatch> matchesByCodeAndLatinName = new LinkedHashMap<>();
-    rows.stream()
+    return rows.stream()
         .filter(row -> !germinalCodes.contains(codeOf(row)))
         .flatMap(CommoditySearchService::speciesMatchesOf)
+        .toList();
+  }
+
+  private static List<SpeciesMatch> namedAndDistinct(List<SpeciesMatch> candidates) {
+    Map<List<String>, SpeciesMatch> matchesByCodeAndLatinName = new LinkedHashMap<>();
+    candidates.stream()
         .filter(match -> match.latinName() != null)
         .forEach(match -> matchesByCodeAndLatinName.putIfAbsent(
             List.of(match.code(), match.latinName()), match));
