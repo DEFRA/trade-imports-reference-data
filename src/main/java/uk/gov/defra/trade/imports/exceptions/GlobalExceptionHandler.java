@@ -1,13 +1,16 @@
 package uk.gov.defra.trade.imports.exceptions;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -47,6 +50,30 @@ public class GlobalExceptionHandler {
       errors.put(error.getField(), error.getDefaultMessage());
     }
     problemDetail.setProperty("errors", errors);
+
+    return problemDetail;
+  }
+
+  @ExceptionHandler({
+      ConstraintViolationException.class,
+      HttpMessageNotReadableException.class,
+      MethodArgumentTypeMismatchException.class
+  })
+  public ProblemDetail handleBadRequestException(Exception ex) {
+    String traceId = MDC.get(MDC_TRACE_ID);
+    log.warn("Bad request (trace: {})", traceId, ex);
+
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.BAD_REQUEST,
+        "The request is not valid"
+    );
+
+    problemDetail.setType(URI.create("https://api.cdp.defra.cloud/problems/bad-request"));
+    problemDetail.setTitle("Bad Request");
+
+    if (traceId != null) {
+      problemDetail.setProperty("traceId", traceId);
+    }
 
     return problemDetail;
   }

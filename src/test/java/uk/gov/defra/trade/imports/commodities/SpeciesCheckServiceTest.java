@@ -86,23 +86,11 @@ class SpeciesCheckServiceTest {
   }
 
   @Test
-  void check_returnsALineWithoutCallingMdm_whenItHasNoCodeOrLatinName() {
-    SpeciesCheckResponse response = service.check(request(
-        line(null, "Bos taurus"),
-        line("0102", null)));
+  void check_returnsNothingWithoutCallingMdm_whenThereAreNoLines() {
+    SpeciesCheckResponse response = service.check(request());
 
-    assertThat(response.missing())
-        .containsExactly(line(null, "Bos taurus"), line("0102", null));
+    assertThat(response.missing()).isEmpty();
     verifyNoInteractions(mdmClient);
-  }
-
-  @Test
-  void check_returnsNothing_whenThereAreNoLines() {
-    SpeciesCheckResponse noBody = service.check(null);
-    SpeciesCheckResponse noLines = service.check(new SpeciesCheckRequest(null));
-
-    assertThat(noBody.missing()).isEmpty();
-    assertThat(noLines.missing()).isEmpty();
   }
 
   private void givenMdmSpeciesPage(String code, int page, MdmProductPage<MdmSpecies> speciesPage) {

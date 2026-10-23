@@ -7,10 +7,15 @@ import static org.mockserver.model.HttpResponse.response;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import uk.gov.defra.trade.imports.commodities.CommodityGroup;
 import uk.gov.defra.trade.imports.commodities.CommodityLine;
@@ -172,6 +177,38 @@ class CommoditiesControllerIT extends IntegrationBase {
         "/commodities/species-check", request, String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"page=-1", "size=0", "size=101", "page=first", "size=many"})
+  void searchCommodities_answersBadRequestWithoutCallingMdm_forPagingOutsideItsLimits(
+      String paging) {
+    ResponseEntity<String> response =
+        restTemplate.getForEntity("/commodities?search=dog&" + paging, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    usingStub().verify(request().withPath(SEARCH_PATH), VerificationTimes.never());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "",
+      "{",
+      "{}",
+      "{\"lines\":null}",
+      "{\"lines\":[null]}",
+      "{\"lines\":[{\"latinName\":\"Bos taurus\"}]}",
+      "{\"lines\":[{\"code\":\"0102\",\"latinName\":\" \"}]}"})
+  void checkSpecies_answersBadRequestWithoutCallingMdm_forABodyThatIsNotAListOfLines(
+      String body) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    ResponseEntity<String> response = restTemplate.postForEntity(
+        "/commodities/species-check", new HttpEntity<>(body, headers), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    usingStub().verify(request().withPath(SPECIES_PATH), VerificationTimes.never());
   }
 
   private void stubSearch(String term, String fixture) {

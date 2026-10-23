@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import jakarta.validation.ConstraintViolationException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -188,6 +190,22 @@ class GlobalExceptionHandlerTest {
         if (properties != null) {
             assertThat(properties).doesNotContainKey("traceId");
         }
+    }
+
+    @Test
+    void handleBadRequestException_shouldReturnBadRequest() {
+        MDC.put("trace.id", "test-trace-400");
+        ConstraintViolationException exception =
+            new ConstraintViolationException("size: must be less than or equal to 100", Set.of());
+
+        ProblemDetail problemDetail = exceptionHandler.handleBadRequestException(exception);
+
+        assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+        assertThat(problemDetail.getTitle()).isEqualTo("Bad Request");
+        assertThat(problemDetail.getDetail()).isEqualTo("The request is not valid");
+        assertThat(problemDetail.getType())
+            .isEqualTo(URI.create("https://api.cdp.defra.cloud/problems/bad-request"));
+        assertThat(problemDetail.getProperties()).containsEntry("traceId", "test-trace-400");
     }
 
     @Test

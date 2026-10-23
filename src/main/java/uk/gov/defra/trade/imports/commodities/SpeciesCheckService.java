@@ -20,19 +20,14 @@ public class SpeciesCheckService {
   private final MdmService mdmService;
 
   public SpeciesCheckResponse check(SpeciesCheckRequest request) {
-    List<CommodityLine> lines =
-        request == null || request.lines() == null ? List.of() : request.lines();
     Map<String, Set<String>> latinNamesByCode = new HashMap<>();
-    List<CommodityLine> missing = lines.stream()
+    List<CommodityLine> missing = request.lines().stream()
         .filter(line -> isUnlisted(line, latinNamesByCode))
         .toList();
     return SpeciesCheckResponse.builder().missing(missing).build();
   }
 
   private boolean isUnlisted(CommodityLine line, Map<String, Set<String>> latinNamesByCode) {
-    if (line.code() == null || line.latinName() == null) {
-      return true;
-    }
     return !latinNamesByCode.computeIfAbsent(line.code(), this::speciesOf)
         .contains(line.latinName());
   }

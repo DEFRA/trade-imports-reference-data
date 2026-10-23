@@ -146,16 +146,6 @@ class CommoditySearchServiceTest {
   }
 
   @Test
-  void search_asksMdmForAPageWithinItsLimits() {
-    givenMdmSearchAnswers("dog", 0, 100, page(0));
-
-    CommoditySearchResponse response = service.search("dog", -1, 500);
-
-    assertThat(response.page()).isZero();
-    assertThat(response.size()).isEqualTo(100);
-  }
-
-  @Test
   void search_trimsTheTermBeforeSearching() {
     givenMdmSearchAnswers("dog", 0, 10, page(0));
 

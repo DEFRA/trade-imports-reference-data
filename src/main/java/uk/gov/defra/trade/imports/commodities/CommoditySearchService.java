@@ -30,25 +30,23 @@ public class CommoditySearchService {
   private final MdmService mdmService;
 
   public CommoditySearchResponse search(String searchTerm, int page, int size) {
-    int pageNumber = Math.max(page, 0);
-    int pageSize = Math.clamp(size, 1, MAXIMUM_PAGE_SIZE);
     String trimmedSearchTerm = searchTerm == null ? "" : searchTerm.trim();
     if (trimmedSearchTerm.length() < MINIMUM_SEARCH_LENGTH) {
       log.info("Commodity search term '{}' is shorter than {} characters, so MDM is not asked",
           trimmedSearchTerm, MINIMUM_SEARCH_LENGTH);
       return CommoditySearchResponse.builder()
-          .total(0).page(pageNumber).size(pageSize).groups(List.of()).build();
+          .total(0).page(page).size(size).groups(List.of()).build();
     }
 
     MdmProductPage<MdmProductSearchResult> productPage =
-        mdmService.searchProducts(trimmedSearchTerm, pageNumber, pageSize);
+        mdmService.searchProducts(trimmedSearchTerm, page, size);
     Set<String> germinalCodes = germinalCodesAmong(productPage.content());
     if (!germinalCodes.isEmpty()) {
       log.info("Commodity search for '{}' leaves out germinal codes {}", trimmedSearchTerm,
           germinalCodes);
     }
     Map<String, List<CommoditySpecies>> speciesByCode = new LinkedHashMap<>();
-    SpeciesLimit speciesLimit = new SpeciesLimit(pageSize);
+    SpeciesLimit speciesLimit = new SpeciesLimit(size);
     productPage.content().stream()
         .filter(row -> !germinalCodes.contains(codeOf(row)))
         .forEach(row -> addRow(speciesByCode, row, speciesLimit));
@@ -60,7 +58,7 @@ public class CommoditySearchService {
 
     long total = productPage.totalElements();
     return CommoditySearchResponse.builder()
-        .total(total).page(pageNumber).size(pageSize).groups(groups).build();
+        .total(total).page(page).size(size).groups(groups).build();
   }
 
   private Set<String> germinalCodesAmong(List<MdmProductSearchResult> rows) {
