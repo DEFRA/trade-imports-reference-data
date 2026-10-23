@@ -28,12 +28,12 @@ public class CommoditiesController {
   @GetMapping()
   @Timed("controller.searchCommodities.time")
   public ResponseEntity<CommoditySearchResponse> searchCommodities(
-      @RequestParam(required = false, value = "search") String searchTerm,
+      @RequestParam(value = "q", required = false) String q,
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "100") @Min(1) @Max(CommoditySearchService.MAXIMUM_PAGE_SIZE)
       int size) {
     lookupMetrics.recordLookup(LookupMetrics.COMMODITY_SEARCH);
-    return ResponseEntity.ok(commoditySearchService.search(searchTerm, page, size));
+    return ResponseEntity.ok(commoditySearchService.search(q, page, size));
   }
 
   @PostMapping("/species-check")

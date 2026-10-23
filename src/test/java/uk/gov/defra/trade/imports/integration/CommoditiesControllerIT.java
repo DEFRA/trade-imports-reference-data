@@ -47,7 +47,7 @@ class CommoditiesControllerIT extends IntegrationBase {
   @Test
   void searchCommodities_leavesOutTheCodesMdmFlagsAsGerminal() {
     ResponseEntity<CommoditySearchResponse> response =
-        restTemplate.getForEntity("/commodities?search=cattle", CommoditySearchResponse.class);
+        restTemplate.getForEntity("/commodities?q=cattle", CommoditySearchResponse.class);
 
     assertThat(response.getBody().groups()).containsExactly(CommodityGroup.builder()
         .code("0102")
@@ -64,7 +64,7 @@ class CommoditiesControllerIT extends IntegrationBase {
   @Test
   void searchCommodities_groupsMdmsSpeciesRowsUnderTheirCodes() {
     ResponseEntity<CommoditySearchResponse> response =
-        restTemplate.getForEntity("/commodities?search=dog", CommoditySearchResponse.class);
+        restTemplate.getForEntity("/commodities?q=dog", CommoditySearchResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody().total()).isEqualTo(2);
@@ -80,7 +80,7 @@ class CommoditiesControllerIT extends IntegrationBase {
   @Test
   void searchCommodities_listsTheSpeciesOfACommodityFoundByCode() {
     ResponseEntity<CommoditySearchResponse> response =
-        restTemplate.getForEntity("/commodities?search=0102", CommoditySearchResponse.class);
+        restTemplate.getForEntity("/commodities?q=0102", CommoditySearchResponse.class);
 
     assertThat(response.getBody().groups()).containsExactly(CommodityGroup.builder()
         .code("0102")
@@ -110,7 +110,7 @@ class CommoditiesControllerIT extends IntegrationBase {
   @Test
   void searchCommodities_asksMdmForThePageAndSizeGiven() {
     ResponseEntity<CommoditySearchResponse> response = restTemplate.getForEntity(
-        "/commodities?search=dog&page=1&size=10", CommoditySearchResponse.class);
+        "/commodities?q=dog&page=1&size=10", CommoditySearchResponse.class);
 
     assertThat(response.getBody().page()).isEqualTo(1);
     assertThat(response.getBody().size()).isEqualTo(10);
@@ -124,7 +124,7 @@ class CommoditiesControllerIT extends IntegrationBase {
 
   @Test
   void searchCommodities_asksMdmForOneHundredResults_whenNoSizeIsGiven() {
-    restTemplate.getForEntity("/commodities?search=dog", String.class);
+    restTemplate.getForEntity("/commodities?q=dog", String.class);
 
     usingStub().verify(
         request().withMethod("GET").withPath(SEARCH_PATH)
@@ -137,7 +137,7 @@ class CommoditiesControllerIT extends IntegrationBase {
 
   @Test
   void searchCommodities_doesNotCallMdm_forAOneCharacterTerm() {
-    ResponseEntity<String> response = restTemplate.getForEntity("/commodities?search=d", String.class);
+    ResponseEntity<String> response = restTemplate.getForEntity("/commodities?q=d", String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).isEqualTo("{\"total\":0,\"page\":0,\"size\":100,\"groups\":[]}");
@@ -184,7 +184,7 @@ class CommoditiesControllerIT extends IntegrationBase {
   void searchCommodities_answersBadRequestWithoutCallingMdm_forPagingOutsideItsLimits(
       String paging) {
     ResponseEntity<String> response =
-        restTemplate.getForEntity("/commodities?search=dog&" + paging, String.class);
+        restTemplate.getForEntity("/commodities?q=dog&" + paging, String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     usingStub().verify(request().withPath(SEARCH_PATH), VerificationTimes.never());
