@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static uk.gov.defra.trade.imports.commodities.SpeciesCheckService.PAGE_SIZE;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import java.util.Arrays;
@@ -77,8 +78,10 @@ class SpeciesCheckServiceTest {
         line("01061900", "Pudu")));
 
     assertThat(response.unlisted()).isEmpty();
-    verify(mdmClient, times(1)).getCommoditySpecies(any(), eq("01061900"), any(), eq(0), eq(100));
-    verify(mdmClient, times(1)).getCommoditySpecies(any(), eq("01061900"), any(), eq(1), eq(100));
+    verify(mdmClient, times(1))
+        .getCommoditySpecies(any(), eq("01061900"), any(), eq(0), eq(PAGE_SIZE));
+    verify(mdmClient, times(1))
+        .getCommoditySpecies(any(), eq("01061900"), any(), eq(1), eq(PAGE_SIZE));
   }
 
   @Test
@@ -92,7 +95,7 @@ class SpeciesCheckServiceTest {
 
   @Test
   void check_throwsMdmUnavailable_whenMdmSendsNoSpeciesPageForACode() {
-    when(mdmClient.getCommoditySpecies(any(), eq("0102"), any(), eq(0), eq(100)))
+    when(mdmClient.getCommoditySpecies(any(), eq("0102"), any(), eq(0), eq(PAGE_SIZE)))
         .thenReturn(ResponseEntity.ok(null));
     SpeciesCheckRequest request = request(line("0102", "Bos taurus"));
 
@@ -109,7 +112,7 @@ class SpeciesCheckServiceTest {
   }
 
   private void givenMdmSpeciesPage(String code, int page, MdmProductPage<MdmSpecies> speciesPage) {
-    when(mdmClient.getCommoditySpecies(any(), eq(code), any(), eq(page), eq(100)))
+    when(mdmClient.getCommoditySpecies(any(), eq(code), any(), eq(page), eq(PAGE_SIZE)))
         .thenReturn(ResponseEntity.ok(speciesPage));
   }
 
