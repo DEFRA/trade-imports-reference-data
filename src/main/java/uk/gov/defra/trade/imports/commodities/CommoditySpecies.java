@@ -4,6 +4,8 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.NOT_REQUIR
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.annotation.Nullable;
+import java.util.Objects;
 import lombok.Builder;
 
 @Schema(description = "A species MDM lists under a commodity code")
@@ -14,5 +16,9 @@ public record CommoditySpecies(
     String latinName,
     @Schema(description = "Common name, when MDM holds one", requiredMode = NOT_REQUIRED,
         types = {"string", "null"}, example = "Cattle or Cow")
-    String commonName) {
+    @Nullable String commonName) {
+
+  public CommoditySpecies {
+    Objects.requireNonNull(latinName, "latinName");
+  }
 }
