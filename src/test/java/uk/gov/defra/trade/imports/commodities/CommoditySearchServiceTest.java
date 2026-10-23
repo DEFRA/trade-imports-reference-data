@@ -169,12 +169,16 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_trimsTheTermBeforeSearching() {
-    givenMdmSearchAnswers("dog", 0, 10, page(0));
+    givenMdmSearchAnswers("dog", 0, 10, page(1, species("01061900", "Canis familiaris", "Dog")));
+    givenMdmCommodities(commodity("01061900", false));
 
     CommoditySearchResponse response = service.search("  dog  ", 0, 10);
 
-    assertThat(response.total()).isZero();
-    assertThat(response.groups()).isEmpty();
+    assertThat(response.groups()).containsExactly(CommodityGroup.builder()
+        .code("01061900")
+        .species(List.of(
+            CommoditySpecies.builder().latinName("Canis familiaris").commonName("Dog").build()))
+        .build());
   }
 
   @Test
