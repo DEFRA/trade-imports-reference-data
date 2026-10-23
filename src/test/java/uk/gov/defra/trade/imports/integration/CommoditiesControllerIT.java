@@ -52,8 +52,7 @@ class CommoditiesControllerIT extends IntegrationBase {
 
     assertThat(response.getBody().groups()).containsExactly(CommodityGroup.builder()
         .code("0102")
-        .species(List.of(
-            CommoditySpecies.builder().latinName("Bos taurus").commonName("Cattle or Cow").build()))
+        .species(List.of(species("Bos taurus", "Cattle or Cow")))
         .build());
     usingStub().verify(
         request().withMethod("GET").withPath(COMMODITIES_PATH)
@@ -109,10 +108,6 @@ class CommoditiesControllerIT extends IntegrationBase {
             species("Ovibos", "Muskoxen"),
             species("Syncerus", "African Buffaloes")))
         .build());
-  }
-
-  private static CommoditySpecies species(String latinName, String commonName) {
-    return CommoditySpecies.builder().latinName(latinName).commonName(commonName).build();
   }
 
   @Test
@@ -243,5 +238,9 @@ class CommoditiesControllerIT extends IntegrationBase {
 
   private void stubSearch(String term, String fixture) {
     stubMdmGet(request().withPath(SEARCH_PATH).withQueryStringParameter("q", term), fixture);
+  }
+
+  private static CommoditySpecies species(String latinName, String commonName) {
+    return CommoditySpecies.builder().latinName(latinName).commonName(commonName).build();
   }
 }
