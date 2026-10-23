@@ -63,19 +63,25 @@ class CommoditiesControllerIT extends IntegrationBase {
   }
 
   @Test
-  void searchCommodities_groupsMdmsSpeciesRowsUnderTheirCodes() {
+  void searchCommodities_groupsMdmSpeciesRowsUnderTheirCodes() {
+    stubSearch("bison", "integration/mdm-product-search-bison-response.json");
+
     ResponseEntity<CommoditySearchResponse> response =
-        restTemplate.getForEntity("/commodities?q=dog", CommoditySearchResponse.class);
+        restTemplate.getForEntity("/commodities?q=bison", CommoditySearchResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody().total()).isEqualTo(2);
-    assertThat(response.getBody().groups()).containsExactly(CommodityGroup.builder()
-        .code("01061900")
-        .species(List.of(
-            CommoditySpecies.builder().latinName("Nyctereutes procyonoides").commonName("Raccoon Dog")
-                .build(),
-            CommoditySpecies.builder().latinName("Canis familiaris").commonName("Dog").build()))
-        .build());
+    assertThat(response.getBody().total()).isEqualTo(3);
+    assertThat(response.getBody().groups()).containsExactly(
+        CommodityGroup.builder()
+            .code("0102")
+            .species(List.of(
+                species("Bison bison", "Bisons Spp"),
+                species("Bison bonasus", "European Bison")))
+            .build(),
+        CommodityGroup.builder()
+            .code("01061900")
+            .species(List.of(species("Bison bonasus", "European Bison")))
+            .build());
   }
 
   @Test
