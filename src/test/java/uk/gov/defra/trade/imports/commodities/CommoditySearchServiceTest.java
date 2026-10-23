@@ -178,12 +178,13 @@ class CommoditySearchServiceTest {
   }
 
   @Test
-  void search_returnsNothingWithoutCallingMdm_whenTheTermIsShorterThanTwoCharacters() {
+  void search_returnsNothingWithoutCallingMdm_whenTheTrimmedTermIsShorterThanTheMinimum() {
     CommoditySearchResponse blank = service.search("   ", 0, 10);
     CommoditySearchResponse missing = service.search(null, 0, 10);
-    CommoditySearchResponse oneCharacter = service.search(" c ", 0, 10);
+    String tooShortTerm = "c".repeat(CommoditySearchService.MINIMUM_SEARCH_LENGTH - 1);
+    CommoditySearchResponse tooShort = service.search(" " + tooShortTerm + " ", 0, 10);
 
-    assertThat(List.of(blank, missing, oneCharacter)).allSatisfy(response -> {
+    assertThat(List.of(blank, missing, tooShort)).allSatisfy(response -> {
       assertThat(response.total()).isZero();
       assertThat(response.groups()).isEmpty();
     });
