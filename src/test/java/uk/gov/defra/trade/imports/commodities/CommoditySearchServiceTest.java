@@ -64,9 +64,9 @@ class CommoditySearchServiceTest {
         species("01061900", "Equus", "Horses"),
         species("05119985", "Equidae", "Horses"),
         commodityRow("0101", "Live horses, asses, mules and hinnies",
-            MdmSpecies.builder().speciesName("Equus cabalus*asinus").build(),
-            MdmSpecies.builder().speciesName("Equus cabalus").commonName("Horse").build(),
-            MdmSpecies.builder().speciesName("Equus asinus").commonName("Donkey").build())));
+            MdmSpecies.builder().latinName("Equus cabalus*asinus").build(),
+            MdmSpecies.builder().latinName("Equus cabalus").commonName("Horse").build(),
+            MdmSpecies.builder().latinName("Equus asinus").commonName("Donkey").build())));
     givenMdmCommodities(commodity("0101", false), commodity("05119985", true),
         commodity("01061900", false));
 
@@ -96,7 +96,7 @@ class CommoditySearchServiceTest {
         species("05119985", "Bos taurus", "Cattle or Cow"),
         species("05111000", "Bos taurus", "Cattle or Cow"),
         commodityRow("05111000", "Bovine semen",
-            MdmSpecies.builder().speciesName("Bos").commonName("Cattle").build())));
+            MdmSpecies.builder().latinName("Bos").commonName("Cattle").build())));
     givenMdmCommodities(commodity("0102", false), commodity("05119985", true),
         commodity("05111000", true));
 
@@ -129,9 +129,9 @@ class CommoditySearchServiceTest {
   void search_listsNoMoreSpeciesThanThePageSize_whenACommodityRowHoldsMore() {
     givenMdmSearchAnswers("0102", 0, 2, page(1,
         commodityRow("0102", "Live bovine animals",
-            MdmSpecies.builder().speciesName("Bos").commonName("Cattle").build(),
-            MdmSpecies.builder().speciesName("Bubalus").commonName("water buffalos").build(),
-            MdmSpecies.builder().speciesName("Bos taurus").commonName("Cattle or Cow").build()),
+            MdmSpecies.builder().latinName("Bos").commonName("Cattle").build(),
+            MdmSpecies.builder().latinName("Bubalus").commonName("water buffalos").build(),
+            MdmSpecies.builder().latinName("Bos taurus").commonName("Cattle or Cow").build()),
         species("01061900", "Bos taurus", "Cattle or Cow")));
     givenMdmCommodities(commodity("0102", false), commodity("01061900", false));
 
@@ -207,7 +207,7 @@ class CommoditySearchServiceTest {
     return MdmProductSearchResult.builder()
         .resultType(ResultType.SPECIES)
         .commodityCnCode(code)
-        .speciesName(latinName)
+        .latinName(latinName)
         .commonName(commonName)
         .build();
   }

@@ -121,7 +121,7 @@ class SpeciesCheckServiceTest {
   private static MdmProductPage<MdmSpecies> page(long total, String... latinNames) {
     return MdmProductPage.<MdmSpecies>builder()
         .content(Arrays.stream(latinNames)
-            .map(name -> MdmSpecies.builder().speciesName(name).build())
+            .map(name -> MdmSpecies.builder().latinName(name).build())
             .toList())
         .totalElements(total)
         .build();

@@ -95,13 +95,13 @@ public class CommoditySearchService {
       return;
     }
     if (row.resultType() == SPECIES) {
-      addSpecies(speciesByCode, code, row.speciesName(), row.commonName(), speciesLimit);
+      addSpecies(speciesByCode, code, row.latinName(), row.commonName(), speciesLimit);
       return;
     }
     speciesByCode.computeIfAbsent(code, key -> new ArrayList<>());
     if (row.species() != null) {
       row.species().forEach(species -> addSpecies(speciesByCode, code,
-          species.speciesName(), species.commonName(), speciesLimit));
+          species.latinName(), species.commonName(), speciesLimit));
     }
   }
 

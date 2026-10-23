@@ -43,7 +43,7 @@ public class SpeciesCheckService {
     while (true) {
       MdmProductPage<MdmSpecies> speciesPage =
           mdmService.getCommoditySpecies(code, page, PAGE_SIZE);
-      speciesPage.content().forEach(species -> names.add(species.speciesName()));
+      speciesPage.content().forEach(species -> names.add(species.latinName()));
       long total = speciesPage.totalElements();
       if (speciesPage.content().isEmpty() || (long) (page + 1) * PAGE_SIZE >= total) {
         return names;

@@ -8,7 +8,7 @@ import lombok.Builder;
 @Builder
 public record MdmProductSearchResult(
     @JsonFormat(with = JsonFormat.Feature.READ_UNKNOWN_ENUM_VALUES_AS_NULL) ResultType resultType,
-    String speciesName,
+    @JsonProperty("speciesName") String latinName,
     String commonName,
     String commodityCnCode,
     String code,

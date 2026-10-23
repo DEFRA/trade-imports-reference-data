@@ -213,7 +213,7 @@ class MdmServiceTest {
   void searchProducts_returnsBodyFromMdmResponse() {
     MdmProductSearchResult bosTaurus = MdmProductSearchResult.builder()
         .resultType(ResultType.SPECIES)
-        .speciesName("Bos taurus")
+        .latinName("Bos taurus")
         .commonName("Cattle or Cow")
         .commodityCnCode("0102")
         .build();
@@ -311,7 +311,7 @@ class MdmServiceTest {
   @Test
   void getCommoditySpecies_returnsBodyFromMdmResponse() {
     MdmSpecies felisCatus = MdmSpecies.builder()
-        .speciesName("Felis catus")
+        .latinName("Felis catus")
         .commonName("Domestic Cat")
         .commodityCnCode("01061900")
         .build();
