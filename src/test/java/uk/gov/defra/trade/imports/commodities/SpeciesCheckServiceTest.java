@@ -112,9 +112,13 @@ class SpeciesCheckServiceTest {
   void check_returnsEveryLine_forACodeMdmHasNoSpeciesFor() {
     givenMdmSpeciesPage("030111", 0, page(0));
 
-    SpeciesCheckResponse response = service.check(request(line("030111", "Cyprinus carpio")));
+    SpeciesCheckResponse response = service.check(request(
+        line("030111", "Cyprinus carpio"),
+        line("030111", "Carassius auratus")));
 
-    assertThat(response.unlisted()).containsExactly(line("030111", "Cyprinus carpio"));
+    assertThat(response.unlisted()).containsExactly(
+        line("030111", "Cyprinus carpio"),
+        line("030111", "Carassius auratus"));
   }
 
   @Test
