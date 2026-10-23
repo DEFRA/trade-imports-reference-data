@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import software.amazon.cloudwatchlogs.emf.environment.Environment;
+import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 import software.amazon.cloudwatchlogs.emf.model.MetricsContext;
 import software.amazon.cloudwatchlogs.emf.sinks.ISink;
 
@@ -26,6 +27,11 @@ public class CapturingEmfEnvironment implements Environment {
 
   public CapturingEmfEnvironment(boolean failing) {
     this.failing = failing;
+  }
+
+  /** Returns an enabled writer whose documents this environment captures. */
+  public EmfMetricWriter writer() {
+    return new EmfMetricWriter(true, "trade-imports-reference-data", () -> new MetricsLogger(this));
   }
 
   /** Returns every document the sink has accepted, parsed. */

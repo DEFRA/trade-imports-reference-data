@@ -14,13 +14,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 import uk.gov.defra.trade.imports.client.MdmClient;
 import uk.gov.defra.trade.imports.client.MdmProductPage;
 import uk.gov.defra.trade.imports.client.MdmService;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
 import uk.gov.defra.trade.imports.metrics.CapturingEmfEnvironment;
-import uk.gov.defra.trade.imports.metrics.EmfMetricWriter;
 import uk.gov.defra.trade.imports.metrics.LookupMetrics;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,8 +34,7 @@ class CommoditiesControllerTest {
   @BeforeEach
   void setUp() {
     MdmService mdmService = new MdmService(mdmClient, new MdmConfiguration());
-    LookupMetrics lookupMetrics = new LookupMetrics(new EmfMetricWriter(
-        true, "trade-imports-reference-data", () -> new MetricsLogger(metricsEnvironment)));
+    LookupMetrics lookupMetrics = new LookupMetrics(metricsEnvironment.writer());
     controller = new CommoditiesController(
         new CommoditySearchService(mdmService), new SpeciesCheckService(mdmService), lookupMetrics);
   }
