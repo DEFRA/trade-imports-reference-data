@@ -270,7 +270,6 @@ class MdmServiceTest {
   void getCommodities_returnsBodyFromMdmResponse() {
     MdmCommodity liveBovineAnimals = MdmCommodity.builder()
         .code("0102")
-        .description("Live bovine animals")
         .isGerminal(false)
         .build();
     when(mdmClient.getCommodities(any(), any(), any()))
