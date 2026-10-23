@@ -12,10 +12,6 @@ public record MdmProductSearchResult(
     String commonName,
     String commodityCnCode,
     String code,
-    String description,
-    Boolean isGerminal,
-    Boolean isSelectable,
-    Integer speciesCount,
     @JsonProperty("scientificNames") List<MdmSpecies> species) {
 
   public enum ResultType {
