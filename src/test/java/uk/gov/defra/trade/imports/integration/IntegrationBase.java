@@ -67,22 +67,26 @@ abstract class IntegrationBase {
 
   @DynamicPropertySource
   static void setProperties(DynamicPropertyRegistry registry) {
+    registerMockedServiceUrls(registry);
+    registerOAuthProperties(registry);
+    registry.add("spring.data.mongodb.uri", MONGO_CONTAINER::getReplicaSetUrl);
+    registry.add("spring.data.mongodb.ssl.enabled", () -> "false");
+  }
 
-    // Service API urls
+  private static void registerMockedServiceUrls(DynamicPropertyRegistry registry) {
     SERVICES_TO_MOCK.forEach(
         service -> registry.add("%s.url".formatted(service),
             () -> "%s/%s/".formatted(MOCK_SERVER_CONTAINER.getEndpoint(), service)));
+    registry.add("trade-auth.api.url",
+        () -> MOCK_SERVER_CONTAINER.getEndpoint() + "/trade-auth/token");
+  }
 
-    // Oauth Server container config
+  private static void registerOAuthProperties(DynamicPropertyRegistry registry) {
     registry.add("auth-api.url",
         () -> "http://%s:%d/oauth2/token".formatted(OAUTH_CONTAINER.getHost(),
             OAUTH_CONTAINER.getMappedPort(8080)));
     registry.add("auth-api.resource", () -> "http://%s:%d".formatted(OAUTH_CONTAINER.getHost(),
         OAUTH_CONTAINER.getMappedPort(8080)));
-
-    registry.add("trade-auth.api.url",
-        () -> MOCK_SERVER_CONTAINER.getEndpoint() + "/trade-auth/token");
-
     registry.add("spring.security.oauth2.client.provider.trade-platform.token-uri",
         () -> "http://%s:%d/trade-platform/token".formatted(OAUTH_CONTAINER.getHost(),
             OAUTH_CONTAINER.getMappedPort(8080)));
@@ -97,17 +101,8 @@ abstract class IntegrationBase {
             "http://%s:%d/default/jwks"
                 .formatted(OAUTH_CONTAINER.getHost(), OAUTH_CONTAINER.getMappedPort(8080)));
     registry.add("spring.security.jwt.aud", () -> "integration-test");
-
-    registry.add("spring.data.mongodb.uri", MONGO_CONTAINER::getReplicaSetUrl);
-    registry.add("spring.data.mongodb.ssl.enabled", () -> "false");
   }
 
-  /**
-   * The main MockServerClient to be used for stubbing out the requests that we need to be
-   * verifiable.
-   *
-   * @return the MockServerClient to be used for stubbing out external services.
-   */
   MockServerClient usingStub() {
     if (mockServerClient == null) {
       mockServerClient = new MockServerClient(MOCK_SERVER_CONTAINER.getHost(),
