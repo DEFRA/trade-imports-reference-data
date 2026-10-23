@@ -149,6 +149,24 @@ class CommoditySearchServiceTest {
   }
 
   @Test
+  void search_listsOnlyTheNamedSpeciesOfRowsWithAKnownResultType() {
+    givenMdmSearchAnswers("bos", 0, 10, page(3,
+        MdmProductSearchResult.builder().code("0103").latinName("Sus scrofa").build(),
+        commodityRow("0102",
+            MdmSpecies.builder().commonName("Cattle").build(),
+            MdmSpecies.builder().latinName("Bos").commonName("Cattle").build())));
+    givenMdmCommodities(commodity("0102", false));
+
+    CommoditySearchResponse response = service.search("bos", 0, 10);
+
+    assertThat(response.total()).isEqualTo(1);
+    assertThat(response.groups()).containsExactly(CommodityGroup.builder()
+        .code("0102")
+        .species(List.of(CommoditySpecies.builder().latinName("Bos").commonName("Cattle").build()))
+        .build());
+  }
+
+  @Test
   void search_logsTheRowsAndSpeciesItLeavesOut() {
     givenMdmSearchAnswers("bos", 0, 1, page(4,
         MdmProductSearchResult.builder().code("0103").latinName("Sus scrofa").build(),
