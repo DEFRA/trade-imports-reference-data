@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uk.gov.defra.trade.imports.client.MdmProductPage;
 import uk.gov.defra.trade.imports.client.MdmService;
 import uk.gov.defra.trade.imports.client.MdmSpecies;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class SpeciesCheckService {
@@ -24,6 +26,10 @@ public class SpeciesCheckService {
     List<CommodityLine> unlisted = request.lines().stream()
         .filter(line -> isUnlisted(line, latinNamesByCode))
         .toList();
+    if (!unlisted.isEmpty()) {
+      log.warn("Species check found {} lines MDM does not list under their code: {}",
+          unlisted.size(), unlisted);
+    }
     return SpeciesCheckResponse.builder().unlisted(unlisted).build();
   }
 
