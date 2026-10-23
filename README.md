@@ -92,7 +92,7 @@ Port lists are grouped in `PortType` declaration order: airports, then seaports,
 ### Configuration notes
 
 - When `HTTP_PROXY` is set to `http://host:port`, every outbound HTTP and HTTPS call goes through it, as CDP requires for egress; without it, calls go direct. A malformed value is logged with its credentials masked and without the parse exception, whose message repeats the URL.
-- `GlobalExceptionHandler` answers only application exceptions. Spring's own exceptions, such as a 404 for an unknown path, keep Spring's answers.
+- `GlobalExceptionHandler` answers application exceptions, an MDM answer with no body, content or total as 503, and invalid request input (a constraint violation, an unreadable body or a parameter of the wrong type) as 400. Spring's other exceptions, such as a 404 for an unknown path, keep Spring's answers.
 
 ### SonarCloud
 
