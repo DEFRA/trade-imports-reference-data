@@ -45,7 +45,7 @@ class CommoditiesControllerTest {
   @Test
   void searchCommodities_shouldCountOneCommoditySearchLookup() {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
-        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0, 10, 0L, 0)));
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0L)));
 
     ResponseEntity<CommoditySearchResponse> response = controller.searchCommodities("dog", 0, 10);
 

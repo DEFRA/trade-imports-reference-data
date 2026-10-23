@@ -202,7 +202,7 @@ class MdmServiceTest {
   @Test
   void searchProducts_callsMdmWithGbnagDatasetAndPaging() {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
-        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0, 100, 0L, 0)));
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0L)));
 
     mdmService.searchProducts("cattle", 0, 100);
 
@@ -218,7 +218,7 @@ class MdmServiceTest {
         .commodityCnCode("0102")
         .build();
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
-        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(bosTaurus), 0, 100, 8L, 1)));
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(bosTaurus), 8L)));
 
     MdmProductPage<MdmProductSearchResult> productPage =
         mdmService.searchProducts("cattle", 0, 100);
@@ -240,7 +240,7 @@ class MdmServiceTest {
   @Test
   void searchProducts_throwsMdmUnavailable_whenMdmContentIsNull() {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
-        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(null, 0, 100, 5L, 1)));
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(null, 5L)));
 
     assertThatThrownBy(() -> mdmService.searchProducts("cattle", 0, 100))
         .isInstanceOf(MdmUnavailableException.class)
@@ -250,7 +250,7 @@ class MdmServiceTest {
   @Test
   void searchProducts_throwsMdmUnavailable_whenMdmTotalIsNull() {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
-        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0, 100, null, 1)));
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), null)));
 
     assertThatThrownBy(() -> mdmService.searchProducts("cattle", 0, 100))
         .isInstanceOf(MdmUnavailableException.class)
@@ -300,7 +300,7 @@ class MdmServiceTest {
   @Test
   void getCommoditySpecies_callsMdmWithCodeGbnagDatasetAndPaging() {
     when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
-        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0, 500, 0L, null)));
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0L)));
 
     mdmService.getCommoditySpecies("01061900", 1, 500);
 
@@ -315,7 +315,7 @@ class MdmServiceTest {
         .commodityCnCode("01061900")
         .build();
     when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
-        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(felisCatus), 0, 500, 120L, null)));
+        .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(felisCatus), 120L)));
 
     MdmProductPage<MdmSpecies> speciesPage = mdmService.getCommoditySpecies("01061900", 0, 500);
 

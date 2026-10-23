@@ -197,8 +197,6 @@ class CommoditySearchServiceTest {
       MdmProductSearchResult... rows) {
     return MdmProductPage.<MdmProductSearchResult>builder()
         .content(List.of(rows))
-        .page(0)
-        .size(100)
         .totalElements(total)
         .build();
   }
