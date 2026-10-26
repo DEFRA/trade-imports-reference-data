@@ -306,8 +306,9 @@ class MdmServiceTest {
   @Test
   void getCommodities_throwsMdmUnavailable_whenMdmBodyIsNull() {
     when(mdmClient.getCommodities(any(), any(), any())).thenReturn(ResponseEntity.ok(null));
+    List<String> codes = List.of("0102");
 
-    assertThatThrownBy(() -> mdmService.getCommodities(List.of("0102")))
+    assertThatThrownBy(() -> mdmService.getCommodities(codes))
         .isInstanceOf(MdmUnavailableException.class)
         .hasMessage("MDM returned no body for commodities request for [0102]");
   }
