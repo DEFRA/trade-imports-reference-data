@@ -8,7 +8,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
+import static uk.gov.defra.trade.imports.metrics.CapturingLogAppender.keyValues;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.OutputStreamAppender;
+import ch.qos.logback.core.encoder.Encoder;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockserver.matchers.TimeToLive;
 import org.mockserver.matchers.Times;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cache.CacheManager;
@@ -114,25 +123,46 @@ class ExternalCallMetricsIT extends IntegrationBase {
   }
 
   @Test
-  void getCountries_shouldLogTheMdmCallWithTheCallersTraceId() {
+  void getCountries_shouldWriteTheMdmCallLineWithTheCallersTraceIdAndANestedEventObject()
+      throws IOException {
+    // Given
     HttpHeaders headers = new HttpHeaders();
     headers.set("x-cdp-request-id", "trace-from-the-caller");
 
     try (var logs = CapturingLogAppender.attachedTo(ExternalCallMetrics.class)) {
+      // When
       restTemplate.exchange(
           "/countries", HttpMethod.GET, new HttpEntity<>(headers), String.class);
 
-      assertThat(logs.events())
-          .filteredOn(
-              event -> "mdm/get-countries".equals(event.getMDCPropertyMap().get("event.action")))
-          .singleElement()
-          .satisfies(
-              event ->
-                  assertThat(event.getMDCPropertyMap())
-                      .containsEntry("trace.id", "trace-from-the-caller")
-                      .containsEntry("event.outcome", "success")
-                      .containsKey("event.duration"));
+      // Then: exactly one line for the call, encoded as logback-spring.xml configures
+      var mdmCallLines =
+          logs.events().stream()
+              .filter(e -> "mdm/get-countries".equals(keyValues(e).get("event.action")))
+              .toList();
+      assertThat(mdmCallLines).hasSize(1);
+      JsonNode line =
+          new ObjectMapper().readTree(consoleEncoder().encode(mdmCallLines.getFirst()));
+
+      assertThat(line.path("trace.id").asText()).isEqualTo("trace-from-the-caller");
+      assertThat(line.path("service.name").asText()).isEqualTo("trade-imports-reference-data");
+      JsonNode eventObject = line.path("event");
+      assertThat(eventObject.isObject()).as("a nested event object").isTrue();
+      assertThat(eventObject.path("category").asText()).isEqualTo("external-call");
+      assertThat(eventObject.path("action").asText()).isEqualTo("mdm/get-countries");
+      assertThat(eventObject.path("outcome").asText()).isEqualTo("success");
+      assertThat(eventObject.path("duration").isIntegralNumber()).isTrue();
+      assertThat(line.has("event.action")).isFalse();
+      assertThat(line.has("event.duration")).isFalse();
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static Encoder<ILoggingEvent> consoleEncoder() {
+    var loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+    var console =
+        (OutputStreamAppender<ILoggingEvent>)
+            loggerContext.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME).getAppender("CONSOLE");
+    return console.getEncoder();
   }
 
   @Test

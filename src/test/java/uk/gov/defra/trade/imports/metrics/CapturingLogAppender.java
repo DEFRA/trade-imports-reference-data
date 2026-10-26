@@ -3,7 +3,9 @@ package uk.gov.defra.trade.imports.metrics;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +32,15 @@ public class CapturingLogAppender extends AppenderBase<ILoggingEvent> implements
 
   public List<ILoggingEvent> events() {
     return events;
+  }
+
+  /** The event's SLF4J key-value pairs by key, empty when it has none. */
+  public static Map<String, Object> keyValues(ILoggingEvent event) {
+    Map<String, Object> keyValues = new HashMap<>();
+    if (event.getKeyValuePairs() != null) {
+      event.getKeyValuePairs().forEach(pair -> keyValues.put(pair.key, pair.value));
+    }
+    return keyValues;
   }
 
   @Override

@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -27,7 +26,8 @@ import software.amazon.cloudwatchlogs.emf.model.Unit;
  *
  * <p>Each call is also logged, with the ECS {@code event.*} fields and, where there is one, the
  * request's {@code trace.id}, and the exception when the call threw. It is written whether or not
- * EMF is enabled.
+ * EMF is enabled. The {@code event.*} fields are key-value pairs, not MDC entries, so that {@code
+ * EcsEventEncoder} can write them as the nested object, with a numeric duration, that CDP keeps.
  */
 @Slf4j
 @Component
@@ -148,11 +148,12 @@ public class ExternalCallMetrics {
   private static void logCall(ExternalCall call, Duration elapsed, boolean failed, Throwable cause) {
     String action = call.dependency() + "/" + call.operation();
     String outcome = failed ? "failure" : "success";
-    try (var _ = MDC.putCloseable("event.category", EVENT_CATEGORY);
-        var _ = MDC.putCloseable("event.action", action);
-        var _ = MDC.putCloseable("event.outcome", outcome);
-        var _ = MDC.putCloseable("event.duration", String.valueOf(elapsed.toNanos()))) {
-      log.info("External call {} {} in {} ms", action, outcome, elapsed.toMillis(), cause);
-    }
+    log.atInfo()
+        .addKeyValue("event.category", EVENT_CATEGORY)
+        .addKeyValue("event.action", action)
+        .addKeyValue("event.outcome", outcome)
+        .addKeyValue("event.duration", elapsed.toNanos())
+        .setCause(cause)
+        .log("External call {} {} in {} ms", action, outcome, elapsed.toMillis());
   }
 }

@@ -3,6 +3,7 @@ package uk.gov.defra.trade.imports.metrics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static uk.gov.defra.trade.imports.metrics.CapturingLogAppender.keyValues;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
@@ -154,11 +155,11 @@ class ExternalCallMetricsTest {
       var event = logs.events().getFirst();
       assertThat(event.getFormattedMessage())
           .isEqualTo("External call mdm/get-countries success in 250 ms");
-      assertThat(event.getMDCPropertyMap())
+      assertThat(keyValues(event))
           .containsEntry("event.category", "external-call")
           .containsEntry("event.action", "mdm/get-countries")
           .containsEntry("event.outcome", "success")
-          .containsEntry("event.duration", "250000000");
+          .containsEntry("event.duration", 250_000_000L);
     }
   }
 
@@ -170,14 +171,16 @@ class ExternalCallMetricsTest {
       var event = logs.events().getFirst();
       assertThat(event.getFormattedMessage())
           .isEqualTo("External call trade-token/client-credentials-token failure in 5 ms");
-      assertThat(event.getMDCPropertyMap()).containsEntry("event.outcome", "failure");
+      assertThat(keyValues(event)).containsEntry("event.outcome", "failure");
     }
   }
 
   @Test
-  void record_shouldLeaveNoEventFieldsBehindForLaterLogLines() {
+  void record_shouldPutNoEventFieldsInTheMdc() {
+    // When
     metrics.recordCall(ExternalCall.MDM_GET_COUNTRIES, Duration.ofMillis(5), false);
 
+    // Then: anything left in the MDC would be written flat on every later line from this thread
     assertThat(MDC.get("event.category")).isNull();
     assertThat(MDC.get("event.action")).isNull();
     assertThat(MDC.get("event.outcome")).isNull();
