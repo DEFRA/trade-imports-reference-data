@@ -63,7 +63,9 @@ public class CapturingEmfEnvironment implements Environment {
   }
 
   @Override
-  public void configureContext(MetricsContext context) {}
+  public void configureContext(MetricsContext context) {
+    // Adds no environment properties to the context.
+  }
 
   @Override
   public ISink getSink() {
