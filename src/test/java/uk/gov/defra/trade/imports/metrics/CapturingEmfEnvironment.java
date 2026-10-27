@@ -11,9 +11,6 @@ import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 import software.amazon.cloudwatchlogs.emf.model.MetricsContext;
 import software.amazon.cloudwatchlogs.emf.sinks.ISink;
 
-/**
- * A test-only EMF environment whose sink keeps every document it is given, or fails on demand.
- */
 public class CapturingEmfEnvironment implements Environment {
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -29,12 +26,10 @@ public class CapturingEmfEnvironment implements Environment {
     this.failing = failing;
   }
 
-  /** Returns an enabled writer whose documents this environment captures. */
   public EmfMetricWriter writer() {
     return new EmfMetricWriter(true, "trade-imports-reference-data", () -> new MetricsLogger(this));
   }
 
-  /** Returns every document the sink has accepted, parsed. */
   public List<JsonNode> documents() {
     return serialised.stream().map(CapturingEmfEnvironment::parse).toList();
   }
@@ -68,9 +63,7 @@ public class CapturingEmfEnvironment implements Environment {
   }
 
   @Override
-  public void configureContext(MetricsContext context) {
-    // Nothing to add: the default dimensions are not wanted in a captured document.
-  }
+  public void configureContext(MetricsContext context) {}
 
   @Override
   public ISink getSink() {

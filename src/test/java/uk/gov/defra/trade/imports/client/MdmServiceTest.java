@@ -19,7 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
-import uk.gov.defra.trade.imports.exceptions.MdmUnavailableException;
+import uk.gov.defra.trade.imports.exceptions.MdmUnusableResponseException;
 import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,7 +66,7 @@ class MdmServiceTest {
     when(mdmClient.getPorts(any(), any())).thenReturn(okWithTraceHeader(null));
 
     assertThatThrownBy(() -> mdmService.getPortsOfEntry())
-        .isInstanceOf(MdmUnavailableException.class)
+        .isInstanceOf(MdmUnusableResponseException.class)
         .hasMessage("MDM returned no body for ports-of-entry request for GBNAG");
   }
 
@@ -76,7 +76,7 @@ class MdmServiceTest {
         .thenReturn(okWithTraceHeader(new MdmPortsResponse(null)));
 
     assertThatThrownBy(() -> mdmService.getPortsOfEntry())
-        .isInstanceOf(MdmUnavailableException.class)
+        .isInstanceOf(MdmUnusableResponseException.class)
         .hasMessage("MDM returned a ports-of-entry body with no result for GBNAG");
   }
 
@@ -184,7 +184,7 @@ class MdmServiceTest {
     when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(null));
 
     assertThatThrownBy(() -> mdmService.getCountries("GBNAG_SPS_EX"))
-        .isInstanceOf(MdmUnavailableException.class)
+        .isInstanceOf(MdmUnusableResponseException.class)
         .hasMessage("MDM returned no body for countries request for GBNAG_SPS_EX");
   }
 
@@ -248,7 +248,7 @@ class MdmServiceTest {
         .thenReturn(ResponseEntity.ok(null));
 
     assertThatThrownBy(() -> mdmService.searchProducts("cattle", 0, 100))
-        .isInstanceOf(MdmUnavailableException.class)
+        .isInstanceOf(MdmUnusableResponseException.class)
         .hasMessage("MDM returned no body for product search request for cattle");
   }
 
@@ -258,7 +258,7 @@ class MdmServiceTest {
         .thenReturn(ResponseEntity.ok(new MdmProductPage<>(null, 5L)));
 
     assertThatThrownBy(() -> mdmService.searchProducts("cattle", 0, 100))
-        .isInstanceOf(MdmUnavailableException.class)
+        .isInstanceOf(MdmUnusableResponseException.class)
         .hasMessage("MDM returned a product search page with no content for cattle");
   }
 
@@ -268,7 +268,7 @@ class MdmServiceTest {
         .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), null)));
 
     assertThatThrownBy(() -> mdmService.searchProducts("cattle", 0, 100))
-        .isInstanceOf(MdmUnavailableException.class)
+        .isInstanceOf(MdmUnusableResponseException.class)
         .hasMessage("MDM returned a product search page with no total for cattle");
   }
 
@@ -309,7 +309,7 @@ class MdmServiceTest {
     List<String> codes = List.of("0102");
 
     assertThatThrownBy(() -> mdmService.getCommodities(codes))
-        .isInstanceOf(MdmUnavailableException.class)
+        .isInstanceOf(MdmUnusableResponseException.class)
         .hasMessage("MDM returned no body for commodities request for [0102]");
   }
 
@@ -344,7 +344,7 @@ class MdmServiceTest {
         .thenReturn(ResponseEntity.ok(null));
 
     assertThatThrownBy(() -> mdmService.getCommoditySpecies("01061900", 0, 500))
-        .isInstanceOf(MdmUnavailableException.class)
+        .isInstanceOf(MdmUnusableResponseException.class)
         .hasMessage("MDM returned no body for commodity species request for 01061900");
   }
 

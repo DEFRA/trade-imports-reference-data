@@ -1,5 +1,7 @@
 package uk.gov.defra.trade.imports.exceptions;
 
+import feign.FeignException;
+import feign.RetryableException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -25,9 +27,6 @@ public class GlobalExceptionHandler {
 
   private static final String MDC_TRACE_ID = "trace.id";
 
-  /**
-   * Handle validation errors (400 Bad Request).
-   */
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ProblemDetail handleValidationException(MethodArgumentNotValidException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
@@ -78,9 +77,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  /**
-   * Handle not found errors (404 Not Found).
-   */
   @ExceptionHandler(NotFoundException.class)
   public ProblemDetail handleNotFoundException(NotFoundException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
@@ -101,9 +97,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  /**
-   * Handle conflict errors (409 Conflict).
-   */
   @ExceptionHandler(ConflictException.class)
   public ProblemDetail handleConflictException(ConflictException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
@@ -124,8 +117,12 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  @ExceptionHandler(MdmUnavailableException.class)
-  public ProblemDetail handleMdmUnavailableException(MdmUnavailableException ex) {
+  @ExceptionHandler({
+      MdmUnusableResponseException.class,
+      FeignException.class,
+      RetryableException.class
+  })
+  public ProblemDetail handleMdmUnusableResponseException(Exception ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
     log.warn("MDM unavailable (trace: {})", traceId, ex);
 
@@ -144,9 +141,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  /**
-   * Handle unexpected runtime errors (500 Internal Server Error).
-   */
   @ExceptionHandler({
       RuntimeException.class,
       IllegalStateException.class,

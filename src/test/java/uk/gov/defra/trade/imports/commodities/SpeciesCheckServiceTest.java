@@ -25,7 +25,7 @@ import uk.gov.defra.trade.imports.client.MdmProductPage;
 import uk.gov.defra.trade.imports.client.MdmService;
 import uk.gov.defra.trade.imports.client.MdmSpecies;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
-import uk.gov.defra.trade.imports.exceptions.MdmUnavailableException;
+import uk.gov.defra.trade.imports.exceptions.MdmUnusableResponseException;
 import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 
 @ExtendWith(MockitoExtension.class)
@@ -105,7 +105,7 @@ class SpeciesCheckServiceTest {
     SpeciesCheckRequest request = request(line("0102", "Bos taurus"));
 
     assertThatThrownBy(() -> service.check(request))
-        .isInstanceOf(MdmUnavailableException.class);
+        .isInstanceOf(MdmUnusableResponseException.class);
   }
 
   @Test
@@ -128,7 +128,7 @@ class SpeciesCheckServiceTest {
     SpeciesCheckRequest request = request(line("0102", "Bos taurus"));
 
     assertThatThrownBy(() -> service.check(request))
-        .isInstanceOf(MdmUnavailableException.class);
+        .isInstanceOf(MdmUnusableResponseException.class);
   }
 
   @Test
