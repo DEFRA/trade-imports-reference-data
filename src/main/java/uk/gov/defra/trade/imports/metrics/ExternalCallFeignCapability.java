@@ -1,7 +1,10 @@
 package uk.gov.defra.trade.imports.metrics;
 
+import static uk.gov.defra.trade.imports.metrics.ExternalCall.MDM_GET_COMMODITIES;
+import static uk.gov.defra.trade.imports.metrics.ExternalCall.MDM_GET_COMMODITY_SPECIES;
 import static uk.gov.defra.trade.imports.metrics.ExternalCall.MDM_GET_COUNTRIES;
 import static uk.gov.defra.trade.imports.metrics.ExternalCall.MDM_GET_PORTS_OF_ENTRY;
+import static uk.gov.defra.trade.imports.metrics.ExternalCall.MDM_SEARCH_PRODUCTS;
 import static uk.gov.defra.trade.imports.metrics.ExternalCall.TRADE_TOKEN;
 
 import feign.Capability;
@@ -11,14 +14,6 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/**
- * Measures every Feign call at the transport, rather than in {@code MdmService}.
- *
- * <p>{@code MdmClientInterceptor} fetches the Trade token inside the MDM request's interceptor, so
- * timing {@code MdmService} would add token time to MDM's figures on every expired-token call.
- * Interceptors have already run before {@link Client#execute}, so each call is timed on its own.
- * One application-level capability covers every Feign client.
- */
 @Component
 @RequiredArgsConstructor
 public class ExternalCallFeignCapability implements Capability {
@@ -27,6 +22,9 @@ public class ExternalCallFeignCapability implements Capability {
       Map.of(
           "mdm-client#getCountries", MDM_GET_COUNTRIES,
           "mdm-client#getPorts", MDM_GET_PORTS_OF_ENTRY,
+          "mdm-client#searchProducts", MDM_SEARCH_PRODUCTS,
+          "mdm-client#getCommodities", MDM_GET_COMMODITIES,
+          "mdm-client#getCommoditySpecies", MDM_GET_COMMODITY_SPECIES,
           "trade-client#getTradeAuthToken", TRADE_TOKEN);
 
   private static final int HTTP_BAD_REQUEST = 400;

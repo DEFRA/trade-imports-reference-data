@@ -1,0 +1,56 @@
+{
+  "content": [
+    {
+      "resultType": "species",
+      "id": "01061900-0ed63fc3-f504-a8bf-0fd5-f247eac74435",
+      "speciesName": "Nyctereutes procyonoides",
+      "commonName": "Raccoon Dog",
+      "commonNames": [
+        "Raccoon Dog"
+      ],
+      "languageId": "la",
+      "eppoCode": "NYKRPR",
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": "Mammalia",
+        "order": null,
+        "family": "Canidae"
+      },
+      "commodityCnCode": "01061900",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "01061900-64c2a451-f31c-0622-68c3-6e003eb44889",
+      "speciesName": "Canis familiaris",
+      "commonName": "Dog",
+      "commonNames": [
+        "Dog"
+      ],
+      "languageId": "la",
+      "eppoCode": null,
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": null,
+        "order": null,
+        "family": null
+      },
+      "commodityCnCode": "01061900",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    }
+  ],
+  "page": 0,
+  "size": 100,
+  "totalElements": 2,
+  "totalPages": 1
+}

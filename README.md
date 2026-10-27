@@ -84,14 +84,15 @@ Port lists are grouped in `PortType` declaration order: airports, then seaports,
 
 - Every call to MDM and the Trade token endpoint is logged as well as sent as an EMF document, because EMF documents go to CloudWatch and cannot be searched in OpenSearch.
 - `DependencyAvailable` is for the dashboard only. It is not a Spring `HealthIndicator`, because CDP uses `/health` to decide whether a task is alive and would restart every task whenever a dependency went down.
-- Dependencies are not probed, because the MDM caches exist to limit how often the service calls MDM. `DependencyAvailable` is therefore the last real outcome, whatever its age: MDM responses are cached for `cache.mdm.ttl-minutes` (60 by default) and the token is reused until it expires, so the value stays at 1 after a dependency goes down until the next call, and one failed call holds it at 0 until a call succeeds.
+- Dependencies are not probed, because the MDM caches exist to limit how often the service calls MDM. `DependencyAvailable` is therefore the last real outcome, whatever its age. Countries and ports are cached for `cache.mdm.ttl-minutes` (60 by default); commodity search and species check are not, so `DependencyAvailable` for MDM reflects the latest search. The token is reused until it expires. The value stays at 1 after a dependency goes down until the next call, and one failed call holds it at 0 until a call succeeds.
+- How external calls are measured, and why at the Feign transport, is in [doc/observability.md](doc/observability.md).
 - The "dependency unavailable" alert is built on `ExternalCallFailure` over a time window, per `Dependency` and `Operation`, which reports only calls that happened.
 - MongoDB is left out: it is configured, but nothing reads or writes through it.
 
 ### Configuration notes
 
 - When `HTTP_PROXY` is set to `http://host:port`, every outbound HTTP and HTTPS call goes through it, as CDP requires for egress; without it, calls go direct. A malformed value is logged with its credentials masked and without the parse exception, whose message repeats the URL.
-- `GlobalExceptionHandler` answers only application exceptions. Spring's own exceptions, such as a 404 for an unknown path, keep Spring's answers.
+- `GlobalExceptionHandler` answers application exceptions, an MDM answer with no body, content or total as 503, and invalid request input (a constraint violation, an unreadable body or a parameter of the wrong type) as 400. Spring's other exceptions, such as a 404 for an unknown path, keep Spring's answers.
 
 ### SonarCloud
 

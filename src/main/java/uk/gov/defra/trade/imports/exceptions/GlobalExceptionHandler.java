@@ -1,13 +1,18 @@
 package uk.gov.defra.trade.imports.exceptions;
 
+import feign.FeignException;
+import feign.RetryableException;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -22,9 +27,6 @@ public class GlobalExceptionHandler {
 
   private static final String MDC_TRACE_ID = "trace.id";
 
-  /**
-   * Handle validation errors (400 Bad Request).
-   */
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ProblemDetail handleValidationException(MethodArgumentNotValidException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
@@ -51,9 +53,30 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  /**
-   * Handle not found errors (404 Not Found).
-   */
+  @ExceptionHandler({
+      ConstraintViolationException.class,
+      HttpMessageNotReadableException.class,
+      MethodArgumentTypeMismatchException.class
+  })
+  public ProblemDetail handleBadRequestException(Exception ex) {
+    String traceId = MDC.get(MDC_TRACE_ID);
+    log.warn("Bad request (trace: {})", traceId, ex);
+
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.BAD_REQUEST,
+        "The request is not valid"
+    );
+
+    problemDetail.setType(URI.create("https://api.cdp.defra.cloud/problems/bad-request"));
+    problemDetail.setTitle("Bad Request");
+
+    if (traceId != null) {
+      problemDetail.setProperty("traceId", traceId);
+    }
+
+    return problemDetail;
+  }
+
   @ExceptionHandler(NotFoundException.class)
   public ProblemDetail handleNotFoundException(NotFoundException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
@@ -74,9 +97,6 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  /**
-   * Handle conflict errors (409 Conflict).
-   */
   @ExceptionHandler(ConflictException.class)
   public ProblemDetail handleConflictException(ConflictException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
@@ -97,9 +117,30 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  /**
-   * Handle unexpected runtime errors (500 Internal Server Error).
-   */
+  @ExceptionHandler({
+      MdmUnusableResponseException.class,
+      FeignException.class,
+      RetryableException.class
+  })
+  public ProblemDetail handleMdmUnusableResponseException(Exception ex) {
+    String traceId = MDC.get(MDC_TRACE_ID);
+    log.warn("MDM unavailable (trace: {})", traceId, ex);
+
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "Reference data is unavailable. Please try again later."
+    );
+
+    problemDetail.setType(URI.create("https://api.cdp.defra.cloud/problems/service-unavailable"));
+    problemDetail.setTitle("Service Unavailable");
+
+    if (traceId != null) {
+      problemDetail.setProperty("traceId", traceId);
+    }
+
+    return problemDetail;
+  }
+
   @ExceptionHandler({
       RuntimeException.class,
       IllegalStateException.class,
