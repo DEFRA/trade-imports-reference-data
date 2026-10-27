@@ -74,7 +74,7 @@ class CommoditySearchServiceTest {
 
     CommoditySearchResponse response = service.search("horse", 0, 10);
 
-    assertThat(response.total()).isEqualTo(7);
+    assertThat(response.total()).isEqualTo(5);
     assertThat(response.groups()).containsExactly(
         CommodityGroup.builder()
             .code("0101")
@@ -129,7 +129,7 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_countsEverySpeciesMatchButListsNoMoreThanThePageSize() {
-    givenMdmSearchAnswers("0102", 0, 2, page(4,
+    givenMdmSearchAnswers("0102", 0, 2, page(1,
         commodityRow("0102",
             MdmSpecies.builder().latinName("Bos").commonName("Cattle").build(),
             MdmSpecies.builder().latinName("Bubalus").commonName("water buffalos").build(),
@@ -159,7 +159,7 @@ class CommoditySearchServiceTest {
 
     CommoditySearchResponse response = service.search("bos", 0, 10);
 
-    assertThat(response.total()).isEqualTo(3);
+    assertThat(response.total()).isEqualTo(1);
     assertThat(response.groups()).containsExactly(CommodityGroup.builder()
         .code("0102")
         .species(List.of(CommoditySpecies.builder().latinName("Bos").commonName("Cattle").build()))

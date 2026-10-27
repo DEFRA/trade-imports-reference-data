@@ -51,10 +51,8 @@ public class CommoditySearchService {
     logWhatIsLeftOut(trimmedSearchTerm, productPage.content(), candidates,
         matches.size() - listed.size());
 
-    long total =
-        productPage.totalElements() != null ? productPage.totalElements() : matches.size();
     return CommoditySearchResponse.builder()
-        .total(total)
+        .total(matches.size())
         .page(page)
         .size(size)
         .groups(groupsOf(listed))
