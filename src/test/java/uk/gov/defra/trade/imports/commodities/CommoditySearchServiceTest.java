@@ -39,7 +39,7 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_groupsSpeciesByCodeInMdmOrder() {
-    givenMdmSearchAnswers("dog", 0, 10, page(2,
+    givenMdmSearchAnswers("dog", 0, 10, page(
         species("01061900", "Nyctereutes procyonoides", "Raccoon Dog"),
         species("01061900", "Canis familiaris", "Dog")));
     givenMdmCommodities(commodity("01061900", false));
@@ -58,7 +58,7 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_listsACommodityRowsSpeciesOncePerCode() {
-    givenMdmSearchAnswers("horse", 0, 10, page(7,
+    givenMdmSearchAnswers("horse", 0, 10, page(
         species("0101", "Equus cabalus", "Horse"),
         species("05119985", "Equus cabalus", "Horse"),
         species("05119985", "Equus caballus", "Horse"),
@@ -93,7 +93,7 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_leavesOutTheCodesMdmFlagsAsGerminal() {
-    givenMdmSearchAnswers("cattle", 0, 10, page(4,
+    givenMdmSearchAnswers("cattle", 0, 10, page(
         species("0102", "Bos taurus", "Cattle or Cow"),
         species("05119985", "Bos taurus", "Cattle or Cow"),
         species("05111000", "Bos taurus", "Cattle or Cow"),
@@ -113,7 +113,7 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_listsACodeOutsideTheLiveAnimalsChapter_whenMdmDoesNotFlagItGerminal() {
-    givenMdmSearchAnswers("cattle", 0, 10, page(2,
+    givenMdmSearchAnswers("cattle", 0, 10, page(
         species("0102", "Bos taurus", "Cattle or Cow"),
         species("05111000", "Bos taurus", "Cattle or Cow")));
     givenMdmCommodities(commodity("0102", false), commodity("05111000", null));
@@ -129,7 +129,7 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_countsEverySpeciesMatchButListsNoMoreThanThePageSize() {
-    givenMdmSearchAnswers("0102", 0, 2, page(1,
+    givenMdmSearchAnswers("0102", 0, 2, page(
         commodityRow("0102",
             MdmSpecies.builder().latinName("Bos").commonName("Cattle").build(),
             MdmSpecies.builder().latinName("Bubalus").commonName("water buffalos").build(),
@@ -150,7 +150,7 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_listsOnlyTheNamedSpeciesOfRowsWithAKnownResultType() {
-    givenMdmSearchAnswers("bos", 0, 10, page(3,
+    givenMdmSearchAnswers("bos", 0, 10, page(
         MdmProductSearchResult.builder().code("0103").latinName("Sus scrofa").build(),
         commodityRow("0102",
             MdmSpecies.builder().commonName("Cattle").build(),
@@ -168,7 +168,7 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_logsTheRowsAndSpeciesItLeavesOut() {
-    givenMdmSearchAnswers("bos", 0, 1, page(4,
+    givenMdmSearchAnswers("bos", 0, 1, page(
         MdmProductSearchResult.builder().code("0103").latinName("Sus scrofa").build(),
         commodityRow("0102",
             MdmSpecies.builder().commonName("Cattle").build(),
@@ -187,7 +187,7 @@ class CommoditySearchServiceTest {
 
   @Test
   void search_trimsTheTermBeforeSearching() {
-    givenMdmSearchAnswers("dog", 0, 10, page(1, species("01061900", "Canis familiaris", "Dog")));
+    givenMdmSearchAnswers("dog", 0, 10, page(species("01061900", "Canis familiaris", "Dog")));
     givenMdmCommodities(commodity("01061900", false));
 
     CommoditySearchResponse response = service.search("  dog  ", 0, 10);
@@ -228,11 +228,10 @@ class CommoditySearchServiceTest {
     return MdmCommodity.builder().code(code).isGerminal(isGerminal).build();
   }
 
-  private static MdmProductPage<MdmProductSearchResult> page(long total,
-      MdmProductSearchResult... rows) {
+  private static MdmProductPage<MdmProductSearchResult> page(MdmProductSearchResult... rows) {
     return MdmProductPage.<MdmProductSearchResult>builder()
         .content(List.of(rows))
-        .totalElements(total)
+        .totalElements((long) rows.length)
         .build();
   }
 

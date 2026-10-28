@@ -98,7 +98,7 @@ class SpeciesCheckServiceTest {
   }
 
   @Test
-  void check_throwsMdmUnavailable_whenMdmSendsASpeciesPageWithNoTotal() {
+  void check_throwsMdmUnusableResponse_whenMdmSendsASpeciesPageWithNoTotal() {
     givenMdmSpeciesPage("0102", 0, MdmProductPage.<MdmSpecies>builder()
         .content(List.of(MdmSpecies.builder().latinName("Bos taurus").build()))
         .build());
@@ -122,7 +122,7 @@ class SpeciesCheckServiceTest {
   }
 
   @Test
-  void check_throwsMdmUnavailable_whenMdmSendsNoSpeciesPageForACode() {
+  void check_throwsMdmUnusableResponse_whenMdmSendsNoSpeciesPageForACode() {
     when(mdmClient.getCommoditySpecies(any(), eq("0102"), any(), eq(0), eq(PAGE_SIZE)))
         .thenReturn(ResponseEntity.ok(null));
     SpeciesCheckRequest request = request(line("0102", "Bos taurus"));

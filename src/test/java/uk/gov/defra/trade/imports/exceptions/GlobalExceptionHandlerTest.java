@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import feign.FeignException;
 import jakarta.validation.ConstraintViolationException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -210,12 +209,12 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleMdmUnusableResponseException_shouldReturnServiceUnavailable() {
+    void handleNoUsableMdmAnswer_shouldReturnServiceUnavailable() {
         MDC.put("trace.id", "test-trace-503");
         MdmUnusableResponseException exception =
             new MdmUnusableResponseException("MDM returned no body for commodities request for [0102]");
 
-        ProblemDetail problemDetail = exceptionHandler.handleMdmUnusableResponseException(exception);
+        ProblemDetail problemDetail = exceptionHandler.handleNoUsableMdmAnswer(exception);
 
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE.value());
         assertThat(problemDetail.getTitle()).isEqualTo("Service Unavailable");
@@ -224,30 +223,6 @@ class GlobalExceptionHandlerTest {
         assertThat(problemDetail.getType())
             .isEqualTo(URI.create("https://api.cdp.defra.cloud/problems/service-unavailable"));
         assertThat(problemDetail.getProperties()).containsEntry("traceId", "test-trace-503");
-    }
-
-    @Test
-    void handleMdmUnusableResponseException_shouldReturnServiceUnavailable_forFeignException() {
-        MDC.put("trace.id", "test-trace-feign-503");
-        FeignException exception = FeignException.errorStatus(
-            "searchProducts",
-            feign.Response.builder()
-                .status(503)
-                .reason("Service Unavailable")
-                .request(feign.Request.create(
-                    feign.Request.HttpMethod.GET,
-                    "/mdm/trade/product/search",
-                    java.util.Map.of(),
-                    null,
-                    feign.Util.UTF_8,
-                    null))
-                .build());
-
-        ProblemDetail problemDetail = exceptionHandler.handleMdmUnusableResponseException(exception);
-
-        assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE.value());
-        assertThat(problemDetail.getTitle()).isEqualTo("Service Unavailable");
-        assertThat(problemDetail.getProperties()).containsEntry("traceId", "test-trace-feign-503");
     }
 
     private MethodArgumentNotValidException createValidationException(FieldError... fieldErrors) {

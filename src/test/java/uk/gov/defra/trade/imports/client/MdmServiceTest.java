@@ -62,7 +62,7 @@ class MdmServiceTest {
   }
 
   @Test
-  void getPortsOfEntry_throwsMdmUnavailable_whenMdmBodyIsNull() {
+  void getPortsOfEntry_throwsMdmUnusableResponse_whenMdmBodyIsNull() {
     when(mdmClient.getPorts(any(), any())).thenReturn(okWithTraceHeader(null));
 
     assertThatThrownBy(() -> mdmService.getPortsOfEntry())
@@ -71,7 +71,7 @@ class MdmServiceTest {
   }
 
   @Test
-  void getPortsOfEntry_throwsMdmUnavailable_whenResultIsNull() {
+  void getPortsOfEntry_throwsMdmUnusableResponse_whenResultIsNull() {
     when(mdmClient.getPorts(any(), any()))
         .thenReturn(okWithTraceHeader(new MdmPortsResponse(null)));
 
@@ -180,7 +180,7 @@ class MdmServiceTest {
   }
 
   @Test
-  void getCountries_throwsMdmUnavailable_whenMdmBodyIsNull() {
+  void getCountries_throwsMdmUnusableResponse_whenMdmBodyIsNull() {
     when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(null));
 
     assertThatThrownBy(() -> mdmService.getCountries("GBNAG_SPS_EX"))
@@ -243,7 +243,7 @@ class MdmServiceTest {
   }
 
   @Test
-  void searchProducts_throwsMdmUnavailable_whenMdmBodyIsNull() {
+  void searchProducts_throwsMdmUnusableResponse_whenMdmBodyIsNull() {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(null));
 
@@ -253,7 +253,7 @@ class MdmServiceTest {
   }
 
   @Test
-  void searchProducts_throwsMdmUnavailable_whenMdmContentIsNull() {
+  void searchProducts_throwsMdmUnusableResponse_whenMdmContentIsNull() {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(new MdmProductPage<>(null, 5L)));
 
@@ -263,7 +263,7 @@ class MdmServiceTest {
   }
 
   @Test
-  void searchProducts_throwsMdmUnavailable_whenMdmTotalIsNull() {
+  void searchProducts_throwsMdmUnusableResponse_whenMdmTotalIsNull() {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), null)));
 
@@ -304,7 +304,7 @@ class MdmServiceTest {
   }
 
   @Test
-  void getCommodities_throwsMdmUnavailable_whenMdmBodyIsNull() {
+  void getCommodities_throwsMdmUnusableResponse_whenMdmBodyIsNull() {
     when(mdmClient.getCommodities(any(), any(), any())).thenReturn(ResponseEntity.ok(null));
     List<String> codes = List.of("0102");
 
@@ -339,7 +339,7 @@ class MdmServiceTest {
   }
 
   @Test
-  void getCommoditySpecies_throwsMdmUnavailable_whenMdmBodyIsNull() {
+  void getCommoditySpecies_throwsMdmUnusableResponse_whenMdmBodyIsNull() {
     when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(null));
 

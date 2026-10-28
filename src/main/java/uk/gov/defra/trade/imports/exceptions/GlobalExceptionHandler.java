@@ -119,12 +119,14 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler({
       MdmUnusableResponseException.class,
-      FeignException.class,
-      RetryableException.class
+      RetryableException.class,
+      FeignException.BadGateway.class,
+      FeignException.ServiceUnavailable.class,
+      FeignException.GatewayTimeout.class
   })
-  public ProblemDetail handleMdmUnusableResponseException(Exception ex) {
+  public ProblemDetail handleNoUsableMdmAnswer(Exception ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
-    log.warn("MDM unavailable (trace: {})", traceId, ex);
+    log.warn("MDM sent no usable answer (trace: {})", traceId, ex);
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
         HttpStatus.SERVICE_UNAVAILABLE,

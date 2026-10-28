@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockserver.model.HttpError;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -234,6 +235,47 @@ class CommoditiesControllerIT extends IntegrationBase {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     usingStub().verify(request().withPath(SPECIES_OF_0102_PATH), VerificationTimes.never());
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {502, 503, 504})
+  void searchCommodities_answersServiceUnavailable_whenMdmIsDown(int mdmStatus) {
+    usingStub()
+        .when(request().withMethod("GET").withPath(SEARCH_PATH)
+            .withQueryStringParameter("q", "fox"))
+        .respond(response().withStatusCode(mdmStatus));
+
+    ResponseEntity<String> response =
+        restTemplate.getForEntity("/commodities?q=fox", String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @Test
+  void searchCommodities_answersServiceUnavailable_whenMdmDropsTheConnection() {
+    usingStub()
+        .when(request().withMethod("GET").withPath(SEARCH_PATH)
+            .withQueryStringParameter("q", "fox"))
+        .error(HttpError.error().withDropConnection(true));
+
+    ResponseEntity<String> response =
+        restTemplate.getForEntity("/commodities?q=fox", String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {400, 401, 500})
+  void searchCommodities_answersInternalServerError_whenMdmRefusesTheCall(int mdmStatus) {
+    usingStub()
+        .when(request().withMethod("GET").withPath(SEARCH_PATH)
+            .withQueryStringParameter("q", "fox"))
+        .respond(response().withStatusCode(mdmStatus));
+
+    ResponseEntity<String> response =
+        restTemplate.getForEntity("/commodities?q=fox", String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
   private void stubSearch(String term, String fixture) {
