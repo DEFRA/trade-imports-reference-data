@@ -167,6 +167,22 @@ class CommoditySearchServiceTest {
   }
 
   @Test
+  void search_listsNothingForACommodityRowWithNoSpecies() {
+    givenMdmSearchAnswers("bos", 0, 10, page(
+        MdmProductSearchResult.builder().resultType(ResultType.COMMODITY).code("0102").build(),
+        species("0103", "Sus scrofa", "Pig")));
+    givenMdmCommodities(commodity("0102", false), commodity("0103", false));
+
+    CommoditySearchResponse response = service.search("bos", 0, 10);
+
+    assertThat(response.total()).isEqualTo(1);
+    assertThat(response.groups()).containsExactly(CommodityGroup.builder()
+        .code("0103")
+        .species(List.of(CommoditySpecies.builder().latinName("Sus scrofa").commonName("Pig").build()))
+        .build());
+  }
+
+  @Test
   void search_logsTheRowsAndSpeciesItLeavesOut() {
     givenMdmSearchAnswers("bos", 0, 1, page(
         MdmProductSearchResult.builder().code("0103").latinName("Sus scrofa").build(),

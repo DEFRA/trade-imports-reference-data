@@ -13,11 +13,14 @@ import feign.Request;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import feign.Response;
+import feign.RetryableException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.defra.trade.imports.client.Token;
@@ -84,28 +87,65 @@ class MdmClientInterceptorTest {
     verify(tradeApiClient, times(2)).getTradeAuthToken(any());
   }
 
+  @ParameterizedTest
+  @ValueSource(ints = {502, 503, 504})
+  void apply_throwsTokenEndpointUnavailable_whenTheTokenEndpointAnswersAnUnavailableStatus(
+      int status) {
+    FeignException unavailable = tokenEndpointAnswering(status);
+    when(tradeApiClient.getTradeAuthToken(any())).thenThrow(unavailable);
+    RequestTemplate requestTemplate = new RequestTemplate();
+
+    assertThatThrownBy(() -> interceptor.apply(requestTemplate))
+        .isInstanceOf(TokenEndpointUnavailableException.class)
+        .hasMessage("Token endpoint unavailable")
+        .hasCause(unavailable);
+  }
+
   @Test
-  void apply_throwsTokenEndpointUnavailable_whenTheTokenEndpointAnswers503() {
-    Request request = Request.create(
+  void apply_throwsTokenEndpointUnavailable_whenTheTokenEndpointDropsTheConnection() {
+    RetryableException dropped = new RetryableException(
+        -1,
+        "connection reset",
+        Request.HttpMethod.POST,
+        new RuntimeException("reset"),
+        0L,
+        tokenRequest());
+    when(tradeApiClient.getTradeAuthToken(any())).thenThrow(dropped);
+    RequestTemplate requestTemplate = new RequestTemplate();
+
+    assertThatThrownBy(() -> interceptor.apply(requestTemplate))
+        .isInstanceOf(TokenEndpointUnavailableException.class)
+        .hasMessage("Token endpoint unavailable")
+        .hasCause(dropped);
+  }
+
+  @Test
+  void apply_rethrowsTheTokenEndpointsError_whenItAnswersAnyOtherStatus() {
+    FeignException unauthorised = tokenEndpointAnswering(401);
+    when(tradeApiClient.getTradeAuthToken(any())).thenThrow(unauthorised);
+    RequestTemplate requestTemplate = new RequestTemplate();
+
+    assertThatThrownBy(() -> interceptor.apply(requestTemplate)).isSameAs(unauthorised);
+  }
+
+  private static FeignException tokenEndpointAnswering(int status) {
+    return FeignException.errorStatus(
+        "TradeApiClient#getTradeAuthToken",
+        Response.builder()
+            .status(status)
+            .reason("Token endpoint error")
+            .request(tokenRequest())
+            .headers(Collections.emptyMap())
+            .build());
+  }
+
+  private static Request tokenRequest() {
+    return Request.create(
         Request.HttpMethod.POST,
         "http://trade-auth/token",
         Collections.emptyMap(),
         null,
         StandardCharsets.UTF_8,
         null);
-    FeignException unavailable = FeignException.errorStatus(
-        "TradeApiClient#getTradeAuthToken",
-        Response.builder()
-            .status(503)
-            .reason("Service Unavailable")
-            .request(request)
-            .headers(Collections.emptyMap())
-            .build());
-    when(tradeApiClient.getTradeAuthToken(any())).thenThrow(unavailable);
-
-    assertThatThrownBy(() -> interceptor.apply(new RequestTemplate()))
-        .isInstanceOf(TokenEndpointUnavailableException.class)
-        .hasMessage("Token endpoint unavailable")
-        .hasCause(unavailable);
   }
 }

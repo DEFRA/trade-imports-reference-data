@@ -119,13 +119,10 @@ public class CommoditySearchService {
     if (code == null) {
       return Stream.empty();
     }
-    if (row.resultType() == SPECIES) {
-      return speciesMatchOnSpeciesRow(code, row);
-    }
-    if (row.resultType() == COMMODITY) {
-      return speciesMatchesOnCommodityRow(code, row);
-    }
-    return Stream.empty();
+    return switch (row.resultType()) {
+      case SPECIES -> speciesMatchOnSpeciesRow(code, row);
+      case COMMODITY -> speciesMatchesOnCommodityRow(code, row);
+    };
   }
 
   private static Stream<SpeciesMatch> speciesMatchOnSpeciesRow(String code,
