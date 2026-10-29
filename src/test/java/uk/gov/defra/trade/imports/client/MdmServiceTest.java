@@ -9,6 +9,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import feign.Request;
+import feign.RetryableException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,7 +23,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
-import uk.gov.defra.trade.imports.exceptions.MdmUnusableResponseException;
+import uk.gov.defra.trade.imports.exceptions.MdmUnavailableException;
 import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 
 @ExtendWith(MockitoExtension.class)
@@ -62,21 +66,21 @@ class MdmServiceTest {
   }
 
   @Test
-  void getPortsOfEntry_throwsMdmUnusableResponse_whenMdmBodyIsNull() {
+  void getPortsOfEntry_throwsMdmUnavailable_whenMdmBodyIsNull() {
     when(mdmClient.getPorts(any(), any())).thenReturn(okWithTraceHeader(null));
 
     assertThatThrownBy(() -> mdmService.getPortsOfEntry())
-        .isInstanceOf(MdmUnusableResponseException.class)
+        .isInstanceOf(MdmUnavailableException.class)
         .hasMessage("MDM returned no body for ports-of-entry request for GBNAG");
   }
 
   @Test
-  void getPortsOfEntry_throwsMdmUnusableResponse_whenResultIsNull() {
+  void getPortsOfEntry_throwsMdmUnavailable_whenResultIsNull() {
     when(mdmClient.getPorts(any(), any()))
         .thenReturn(okWithTraceHeader(new MdmPortsResponse(null)));
 
     assertThatThrownBy(() -> mdmService.getPortsOfEntry())
-        .isInstanceOf(MdmUnusableResponseException.class)
+        .isInstanceOf(MdmUnavailableException.class)
         .hasMessage("MDM returned a ports-of-entry body with no result for GBNAG");
   }
 
@@ -180,11 +184,11 @@ class MdmServiceTest {
   }
 
   @Test
-  void getCountries_throwsMdmUnusableResponse_whenMdmBodyIsNull() {
+  void getCountries_throwsMdmUnavailable_whenMdmBodyIsNull() {
     when(mdmClient.getCountries(any(), any(), any())).thenReturn(okWithTraceHeader(null));
 
     assertThatThrownBy(() -> mdmService.getCountries("GBNAG_SPS_EX"))
-        .isInstanceOf(MdmUnusableResponseException.class)
+        .isInstanceOf(MdmUnavailableException.class)
         .hasMessage("MDM returned no body for countries request for GBNAG_SPS_EX");
   }
 
@@ -243,33 +247,56 @@ class MdmServiceTest {
   }
 
   @Test
-  void searchProducts_throwsMdmUnusableResponse_whenMdmBodyIsNull() {
+  void searchProducts_throwsMdmUnavailable_whenMdmBodyIsNull() {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(null));
 
     assertThatThrownBy(() -> mdmService.searchProducts("cattle", 0, 100))
-        .isInstanceOf(MdmUnusableResponseException.class)
+        .isInstanceOf(MdmUnavailableException.class)
         .hasMessage("MDM returned no body for product search request for cattle");
   }
 
   @Test
-  void searchProducts_throwsMdmUnusableResponse_whenMdmContentIsNull() {
+  void searchProducts_throwsMdmUnavailable_whenMdmContentIsNull() {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(new MdmProductPage<>(null, 5L)));
 
     assertThatThrownBy(() -> mdmService.searchProducts("cattle", 0, 100))
-        .isInstanceOf(MdmUnusableResponseException.class)
+        .isInstanceOf(MdmUnavailableException.class)
         .hasMessage("MDM returned a product search page with no content for cattle");
   }
 
   @Test
-  void searchProducts_throwsMdmUnusableResponse_whenMdmTotalIsNull() {
+  void searchProducts_throwsMdmUnavailable_whenMdmTotalIsNull() {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), null)));
 
     assertThatThrownBy(() -> mdmService.searchProducts("cattle", 0, 100))
-        .isInstanceOf(MdmUnusableResponseException.class)
+        .isInstanceOf(MdmUnavailableException.class)
         .hasMessage("MDM returned a product search page with no total for cattle");
+  }
+
+  @Test
+  void searchProducts_throwsMdmUnavailable_whenMdmDropsTheConnection() {
+    RetryableException dropped = new RetryableException(
+        -1,
+        "connection reset",
+        Request.HttpMethod.GET,
+        new RuntimeException("reset"),
+        0L,
+        Request.create(
+            Request.HttpMethod.GET,
+            "http://mdm/search",
+            Collections.emptyMap(),
+            null,
+            StandardCharsets.UTF_8,
+            null));
+    when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt())).thenThrow(dropped);
+
+    assertThatThrownBy(() -> mdmService.searchProducts("fox", 0, 10))
+        .isInstanceOf(MdmUnavailableException.class)
+        .hasMessage("MDM unavailable")
+        .hasCause(dropped);
   }
 
   @Test
@@ -304,12 +331,12 @@ class MdmServiceTest {
   }
 
   @Test
-  void getCommodities_throwsMdmUnusableResponse_whenMdmBodyIsNull() {
+  void getCommodities_throwsMdmUnavailable_whenMdmBodyIsNull() {
     when(mdmClient.getCommodities(any(), any(), any())).thenReturn(ResponseEntity.ok(null));
     List<String> codes = List.of("0102");
 
     assertThatThrownBy(() -> mdmService.getCommodities(codes))
-        .isInstanceOf(MdmUnusableResponseException.class)
+        .isInstanceOf(MdmUnavailableException.class)
         .hasMessage("MDM returned no body for commodities request for [0102]");
   }
 
@@ -339,12 +366,12 @@ class MdmServiceTest {
   }
 
   @Test
-  void getCommoditySpecies_throwsMdmUnusableResponse_whenMdmBodyIsNull() {
+  void getCommoditySpecies_throwsMdmUnavailable_whenMdmBodyIsNull() {
     when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(null));
 
     assertThatThrownBy(() -> mdmService.getCommoditySpecies("01061900", 0, 500))
-        .isInstanceOf(MdmUnusableResponseException.class)
+        .isInstanceOf(MdmUnavailableException.class)
         .hasMessage("MDM returned no body for commodity species request for 01061900");
   }
 

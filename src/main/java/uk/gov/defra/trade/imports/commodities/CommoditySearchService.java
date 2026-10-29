@@ -120,8 +120,21 @@ public class CommoditySearchService {
       return Stream.empty();
     }
     if (row.resultType() == SPECIES) {
-      return Stream.of(new SpeciesMatch(code, row.latinName(), row.commonName()));
+      return speciesMatchOnSpeciesRow(code, row);
     }
+    if (row.resultType() == COMMODITY) {
+      return speciesMatchesOnCommodityRow(code, row);
+    }
+    return Stream.empty();
+  }
+
+  private static Stream<SpeciesMatch> speciesMatchOnSpeciesRow(String code,
+      MdmProductSearchResult row) {
+    return Stream.of(new SpeciesMatch(code, row.latinName(), row.commonName()));
+  }
+
+  private static Stream<SpeciesMatch> speciesMatchesOnCommodityRow(String code,
+      MdmProductSearchResult row) {
     if (row.species() == null) {
       return Stream.empty();
     }

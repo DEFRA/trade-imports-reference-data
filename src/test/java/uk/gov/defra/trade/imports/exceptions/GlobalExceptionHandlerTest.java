@@ -209,12 +209,12 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleNoUsableMdmAnswer_shouldReturnServiceUnavailable() {
+    void handleMdmUnavailable_shouldReturnServiceUnavailable() {
         MDC.put("trace.id", "test-trace-503");
-        MdmUnusableResponseException exception =
-            new MdmUnusableResponseException("MDM returned no body for commodities request for [0102]");
+        MdmUnavailableException exception =
+            new MdmUnavailableException("MDM returned no body for commodities request for [0102]");
 
-        ProblemDetail problemDetail = exceptionHandler.handleNoUsableMdmAnswer(exception);
+        ProblemDetail problemDetail = exceptionHandler.handleMdmUnavailable(exception);
 
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE.value());
         assertThat(problemDetail.getTitle()).isEqualTo("Service Unavailable");
@@ -223,6 +223,22 @@ class GlobalExceptionHandlerTest {
         assertThat(problemDetail.getType())
             .isEqualTo(URI.create("https://api.cdp.defra.cloud/problems/service-unavailable"));
         assertThat(problemDetail.getProperties()).containsEntry("traceId", "test-trace-503");
+    }
+
+    @Test
+    void handleTokenEndpointUnavailable_shouldReturnServiceUnavailable() {
+        MDC.put("trace.id", "test-trace-token-503");
+        TokenEndpointUnavailableException exception =
+            new TokenEndpointUnavailableException(
+                "Token endpoint unavailable", new RuntimeException("503"));
+
+        ProblemDetail problemDetail = exceptionHandler.handleTokenEndpointUnavailable(exception);
+
+        assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE.value());
+        assertThat(problemDetail.getTitle()).isEqualTo("Service Unavailable");
+        assertThat(problemDetail.getDetail())
+            .isEqualTo("Reference data is unavailable. Please try again later.");
+        assertThat(problemDetail.getProperties()).containsEntry("traceId", "test-trace-token-503");
     }
 
     private MethodArgumentNotValidException createValidationException(FieldError... fieldErrors) {

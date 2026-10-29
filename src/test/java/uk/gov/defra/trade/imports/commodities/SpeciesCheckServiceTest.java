@@ -25,7 +25,7 @@ import uk.gov.defra.trade.imports.client.MdmProductPage;
 import uk.gov.defra.trade.imports.client.MdmService;
 import uk.gov.defra.trade.imports.client.MdmSpecies;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
-import uk.gov.defra.trade.imports.exceptions.MdmUnusableResponseException;
+import uk.gov.defra.trade.imports.exceptions.MdmUnavailableException;
 import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 
 @ExtendWith(MockitoExtension.class)
@@ -98,14 +98,14 @@ class SpeciesCheckServiceTest {
   }
 
   @Test
-  void check_throwsMdmUnusableResponse_whenMdmSendsASpeciesPageWithNoTotal() {
+  void check_throwsMdmUnavailable_whenMdmSendsASpeciesPageWithNoTotal() {
     givenMdmSpeciesPage("0102", 0, MdmProductPage.<MdmSpecies>builder()
         .content(List.of(MdmSpecies.builder().latinName("Bos taurus").build()))
         .build());
     SpeciesCheckRequest request = request(line("0102", "Bos taurus"));
 
     assertThatThrownBy(() -> service.check(request))
-        .isInstanceOf(MdmUnusableResponseException.class);
+        .isInstanceOf(MdmUnavailableException.class);
   }
 
   @Test
@@ -122,13 +122,13 @@ class SpeciesCheckServiceTest {
   }
 
   @Test
-  void check_throwsMdmUnusableResponse_whenMdmSendsNoSpeciesPageForACode() {
+  void check_throwsMdmUnavailable_whenMdmSendsNoSpeciesPageForACode() {
     when(mdmClient.getCommoditySpecies(any(), eq("0102"), any(), eq(0), eq(PAGE_SIZE)))
         .thenReturn(ResponseEntity.ok(null));
     SpeciesCheckRequest request = request(line("0102", "Bos taurus"));
 
     assertThatThrownBy(() -> service.check(request))
-        .isInstanceOf(MdmUnusableResponseException.class);
+        .isInstanceOf(MdmUnavailableException.class);
   }
 
   @Test

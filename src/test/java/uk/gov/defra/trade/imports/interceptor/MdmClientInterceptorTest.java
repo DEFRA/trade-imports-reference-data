@@ -1,14 +1,20 @@
 package uk.gov.defra.trade.imports.interceptor;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
+import feign.FeignException;
+import feign.Request;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
+import feign.Response;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.defra.trade.imports.client.Token;
 import uk.gov.defra.trade.imports.client.TradeApiClient;
 import uk.gov.defra.trade.imports.configuration.TradeAuthConfig;
+import uk.gov.defra.trade.imports.exceptions.TokenEndpointUnavailableException;
 
 @ExtendWith(MockitoExtension.class)
 class MdmClientInterceptorTest {
@@ -75,5 +82,30 @@ class MdmClientInterceptorTest {
 
     // Then: token fetched each time as it is always considered expired
     verify(tradeApiClient, times(2)).getTradeAuthToken(any());
+  }
+
+  @Test
+  void apply_throwsTokenEndpointUnavailable_whenTheTokenEndpointAnswers503() {
+    Request request = Request.create(
+        Request.HttpMethod.POST,
+        "http://trade-auth/token",
+        Collections.emptyMap(),
+        null,
+        StandardCharsets.UTF_8,
+        null);
+    FeignException unavailable = FeignException.errorStatus(
+        "TradeApiClient#getTradeAuthToken",
+        Response.builder()
+            .status(503)
+            .reason("Service Unavailable")
+            .request(request)
+            .headers(Collections.emptyMap())
+            .build());
+    when(tradeApiClient.getTradeAuthToken(any())).thenThrow(unavailable);
+
+    assertThatThrownBy(() -> interceptor.apply(new RequestTemplate()))
+        .isInstanceOf(TokenEndpointUnavailableException.class)
+        .hasMessage("Token endpoint unavailable")
+        .hasCause(unavailable);
   }
 }

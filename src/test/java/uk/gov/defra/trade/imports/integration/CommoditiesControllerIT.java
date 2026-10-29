@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockserver.model.HttpError;
+import org.mockserver.model.HttpRequest;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -240,10 +241,7 @@ class CommoditiesControllerIT extends IntegrationBase {
   @ParameterizedTest
   @ValueSource(ints = {502, 503, 504})
   void searchCommodities_answersServiceUnavailable_whenMdmIsDown(int mdmStatus) {
-    usingStub()
-        .when(request().withMethod("GET").withPath(SEARCH_PATH)
-            .withQueryStringParameter("q", "fox"))
-        .respond(response().withStatusCode(mdmStatus));
+    stubSearchAnswering("fox", mdmStatus);
 
     ResponseEntity<String> response =
         restTemplate.getForEntity("/commodities?q=fox", String.class);
@@ -253,10 +251,7 @@ class CommoditiesControllerIT extends IntegrationBase {
 
   @Test
   void searchCommodities_answersServiceUnavailable_whenMdmDropsTheConnection() {
-    usingStub()
-        .when(request().withMethod("GET").withPath(SEARCH_PATH)
-            .withQueryStringParameter("q", "fox"))
-        .error(HttpError.error().withDropConnection(true));
+    usingStub().when(searchRequest("fox")).error(HttpError.error().withDropConnection(true));
 
     ResponseEntity<String> response =
         restTemplate.getForEntity("/commodities?q=fox", String.class);
@@ -266,11 +261,8 @@ class CommoditiesControllerIT extends IntegrationBase {
 
   @ParameterizedTest
   @ValueSource(ints = {400, 401, 500})
-  void searchCommodities_answersInternalServerError_whenMdmRefusesTheCall(int mdmStatus) {
-    usingStub()
-        .when(request().withMethod("GET").withPath(SEARCH_PATH)
-            .withQueryStringParameter("q", "fox"))
-        .respond(response().withStatusCode(mdmStatus));
+  void searchCommodities_answersInternalServerError_forAnMdmStatusOtherThanUnavailable(int mdmStatus) {
+    stubSearchAnswering("fox", mdmStatus);
 
     ResponseEntity<String> response =
         restTemplate.getForEntity("/commodities?q=fox", String.class);
@@ -278,8 +270,16 @@ class CommoditiesControllerIT extends IntegrationBase {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
   }
 
+  private HttpRequest searchRequest(String term) {
+    return request().withMethod("GET").withPath(SEARCH_PATH).withQueryStringParameter("q", term);
+  }
+
+  private void stubSearchAnswering(String term, int status) {
+    usingStub().when(searchRequest(term)).respond(response().withStatusCode(status));
+  }
+
   private void stubSearch(String term, String fixture) {
-    stubMdmGet(request().withPath(SEARCH_PATH).withQueryStringParameter("q", term), fixture);
+    stubMdmGet(searchRequest(term), fixture);
   }
 
   private static CommoditySpecies species(String latinName, String commonName) {

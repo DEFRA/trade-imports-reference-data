@@ -35,7 +35,7 @@ public class CommoditiesController {
           + "A term shorter than two characters matches nothing.")
   @ApiResponse(responseCode = "200", description = "The matching species")
   @ApiResponse(responseCode = "400", description = "The page or size is not valid")
-  @ApiResponse(responseCode = "503", description = "MDM sent no usable answer")
+  @ApiResponse(responseCode = "503", description = "MDM unavailable")
   @GetMapping()
   @Timed("controller.searchCommodities.time")
   public ResponseEntity<CommoditySearchResponse> searchCommodities(
@@ -54,7 +54,7 @@ public class CommoditiesController {
       description = "Returns the lines whose Latin name MDM does not list under their code.")
   @ApiResponse(responseCode = "200", description = "The lines MDM does not list")
   @ApiResponse(responseCode = "400", description = "The body is not a list of complete lines")
-  @ApiResponse(responseCode = "503", description = "MDM sent no usable answer")
+  @ApiResponse(responseCode = "503", description = "MDM unavailable")
   @PostMapping("/species-check")
   @Timed("controller.checkSpecies.time")
   public ResponseEntity<SpeciesCheckResponse> checkSpecies(
