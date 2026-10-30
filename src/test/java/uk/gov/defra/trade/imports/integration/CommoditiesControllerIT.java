@@ -10,6 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockserver.model.HttpError;
+import org.mockserver.model.HttpRequest;
 import org.mockserver.verify.VerificationTimes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -236,8 +238,48 @@ class CommoditiesControllerIT extends IntegrationBase {
     usingStub().verify(request().withPath(SPECIES_OF_0102_PATH), VerificationTimes.never());
   }
 
+  @ParameterizedTest
+  @ValueSource(ints = {502, 503, 504})
+  void searchCommodities_answersServiceUnavailable_whenMdmIsDown(int mdmStatus) {
+    stubSearchAnswering("fox", mdmStatus);
+
+    ResponseEntity<String> response =
+        restTemplate.getForEntity("/commodities?q=fox", String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @Test
+  void searchCommodities_answersServiceUnavailable_whenMdmDropsTheConnection() {
+    usingStub().when(searchRequest("fox")).error(HttpError.error().withDropConnection(true));
+
+    ResponseEntity<String> response =
+        restTemplate.getForEntity("/commodities?q=fox", String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {400, 401, 500})
+  void searchCommodities_answersInternalServerError_forAnMdmStatusOtherThanUnavailable(int mdmStatus) {
+    stubSearchAnswering("fox", mdmStatus);
+
+    ResponseEntity<String> response =
+        restTemplate.getForEntity("/commodities?q=fox", String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+  }
+
+  private HttpRequest searchRequest(String term) {
+    return request().withMethod("GET").withPath(SEARCH_PATH).withQueryStringParameter("q", term);
+  }
+
+  private void stubSearchAnswering(String term, int status) {
+    usingStub().when(searchRequest(term)).respond(response().withStatusCode(status));
+  }
+
   private void stubSearch(String term, String fixture) {
-    stubMdmGet(request().withPath(SEARCH_PATH).withQueryStringParameter("q", term), fixture);
+    stubMdmGet(searchRequest(term), fixture);
   }
 
   private static CommoditySpecies species(String latinName, String commonName) {

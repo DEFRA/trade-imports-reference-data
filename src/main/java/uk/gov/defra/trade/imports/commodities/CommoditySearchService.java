@@ -119,9 +119,19 @@ public class CommoditySearchService {
     if (code == null) {
       return Stream.empty();
     }
-    if (row.resultType() == SPECIES) {
-      return Stream.of(new SpeciesMatch(code, row.latinName(), row.commonName()));
-    }
+    return switch (row.resultType()) {
+      case SPECIES -> speciesMatchOnSpeciesRow(code, row);
+      case COMMODITY -> speciesMatchesOnCommodityRow(code, row);
+    };
+  }
+
+  private static Stream<SpeciesMatch> speciesMatchOnSpeciesRow(String code,
+      MdmProductSearchResult row) {
+    return Stream.of(new SpeciesMatch(code, row.latinName(), row.commonName()));
+  }
+
+  private static Stream<SpeciesMatch> speciesMatchesOnCommodityRow(String code,
+      MdmProductSearchResult row) {
     if (row.species() == null) {
       return Stream.empty();
     }

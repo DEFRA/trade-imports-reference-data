@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import feign.FeignException;
 import jakarta.validation.ConstraintViolationException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -210,12 +209,12 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleMdmUnusableResponseException_shouldReturnServiceUnavailable() {
+    void handleMdmUnavailable_shouldReturnServiceUnavailable() {
         MDC.put("trace.id", "test-trace-503");
-        MdmUnusableResponseException exception =
-            new MdmUnusableResponseException("MDM returned no body for commodities request for [0102]");
+        MdmUnavailableException exception =
+            new MdmUnavailableException("MDM returned no body for commodities request for [0102]");
 
-        ProblemDetail problemDetail = exceptionHandler.handleMdmUnusableResponseException(exception);
+        ProblemDetail problemDetail = exceptionHandler.handleMdmUnavailable(exception);
 
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE.value());
         assertThat(problemDetail.getTitle()).isEqualTo("Service Unavailable");
@@ -227,27 +226,19 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleMdmUnusableResponseException_shouldReturnServiceUnavailable_forFeignException() {
-        MDC.put("trace.id", "test-trace-feign-503");
-        FeignException exception = FeignException.errorStatus(
-            "searchProducts",
-            feign.Response.builder()
-                .status(503)
-                .reason("Service Unavailable")
-                .request(feign.Request.create(
-                    feign.Request.HttpMethod.GET,
-                    "/mdm/trade/product/search",
-                    java.util.Map.of(),
-                    null,
-                    feign.Util.UTF_8,
-                    null))
-                .build());
+    void handleTokenEndpointUnavailable_shouldReturnServiceUnavailable() {
+        MDC.put("trace.id", "test-trace-token-503");
+        TokenEndpointUnavailableException exception =
+            new TokenEndpointUnavailableException(
+                "Token endpoint unavailable", new RuntimeException("503"));
 
-        ProblemDetail problemDetail = exceptionHandler.handleMdmUnusableResponseException(exception);
+        ProblemDetail problemDetail = exceptionHandler.handleTokenEndpointUnavailable(exception);
 
         assertThat(problemDetail.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE.value());
         assertThat(problemDetail.getTitle()).isEqualTo("Service Unavailable");
-        assertThat(problemDetail.getProperties()).containsEntry("traceId", "test-trace-feign-503");
+        assertThat(problemDetail.getDetail())
+            .isEqualTo("Reference data is unavailable. Please try again later.");
+        assertThat(problemDetail.getProperties()).containsEntry("traceId", "test-trace-token-503");
     }
 
     private MethodArgumentNotValidException createValidationException(FieldError... fieldErrors) {

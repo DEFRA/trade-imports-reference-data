@@ -1,7 +1,5 @@
 package uk.gov.defra.trade.imports.exceptions;
 
-import feign.FeignException;
-import feign.RetryableException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -117,14 +115,19 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  @ExceptionHandler({
-      MdmUnusableResponseException.class,
-      FeignException.class,
-      RetryableException.class
-  })
-  public ProblemDetail handleMdmUnusableResponseException(Exception ex) {
+  @ExceptionHandler(MdmUnavailableException.class)
+  public ProblemDetail handleMdmUnavailable(MdmUnavailableException ex) {
+    return serviceUnavailable("MDM unavailable", ex);
+  }
+
+  @ExceptionHandler(TokenEndpointUnavailableException.class)
+  public ProblemDetail handleTokenEndpointUnavailable(TokenEndpointUnavailableException ex) {
+    return serviceUnavailable("Token endpoint unavailable", ex);
+  }
+
+  private ProblemDetail serviceUnavailable(String logLine, Exception ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
-    log.warn("MDM unavailable (trace: {})", traceId, ex);
+    log.warn("{} (trace: {})", logLine, traceId, ex);
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
         HttpStatus.SERVICE_UNAVAILABLE,

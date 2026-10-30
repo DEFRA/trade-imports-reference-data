@@ -2,22 +2,32 @@ package uk.gov.defra.trade.imports.interceptor;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
+import feign.FeignException;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
+import feign.RetryableException;
+import feign.codec.ErrorDecoder;
 import java.time.Instant;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import uk.gov.defra.trade.imports.client.MdmErrorDecoder;
 import uk.gov.defra.trade.imports.client.Token;
 import uk.gov.defra.trade.imports.client.TradeApiClient;
 import uk.gov.defra.trade.imports.configuration.TradeAuthConfig;
+import uk.gov.defra.trade.imports.exceptions.TokenEndpointUnavailableException;
 
 @AllArgsConstructor
 public class MdmClientInterceptor {
 
   private final TradeAuthConfig tradeAuthConfig;
   private final TradeApiClient tradeApiClient;
+
+  @Bean
+  public ErrorDecoder mdmErrorDecoder() {
+    return new MdmErrorDecoder();
+  }
 
   @Bean
   public RequestInterceptor mdmRequestInterceptor() {
@@ -45,7 +55,17 @@ public class MdmClientInterceptor {
         formData.add("client_secret", tradeAuthConfig.getClientSecret());
         formData.add("scope", tradeAuthConfig.getScope());
 
-        Token token = tradeApiClient.getTradeAuthToken(formData);
+        Token token;
+        try {
+          token = tradeApiClient.getTradeAuthToken(formData);
+        } catch (RetryableException ex) {
+          throw new TokenEndpointUnavailableException("Token endpoint unavailable", ex);
+        } catch (FeignException ex) {
+          if (ex.status() == 502 || ex.status() == 503 || ex.status() == 504) {
+            throw new TokenEndpointUnavailableException("Token endpoint unavailable", ex);
+          }
+          throw ex;
+        }
 
         accessToken = token.getAccessToken();
         expiryTime = token.getExpiresOn() != null

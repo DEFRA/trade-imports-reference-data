@@ -1,7 +1,9 @@
 package uk.gov.defra.trade.imports.client;
 
+import feign.RetryableException;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -9,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import uk.gov.defra.trade.imports.configuration.CacheConfig;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
-import uk.gov.defra.trade.imports.exceptions.MdmUnusableResponseException;
+import uk.gov.defra.trade.imports.exceptions.MdmUnavailableException;
 
 @Slf4j
 @AllArgsConstructor
@@ -26,10 +28,10 @@ public class MdmService {
   @Cacheable(value = CacheConfig.MDM_POE_CACHE, unless = "#result == null || #result.isEmpty()")
   public List<MdmPortOfEntry> getPortsOfEntry() {
     ResponseEntity<MdmPortsResponse> responseEntity =
-        mdmClient.getPorts(mdmConfiguration.getOcpApimSubscriptionKey(), SYSTEM);
+        fromMdm(() -> mdmClient.getPorts(mdmConfiguration.getOcpApimSubscriptionKey(), SYSTEM));
     MdmPortsResponse body = bodyFrom(responseEntity, "ports-of-entry", SYSTEM);
     if (body.getResult() == null) {
-      throw new MdmUnusableResponseException(
+      throw new MdmUnavailableException(
           "MDM returned a ports-of-entry body with no result for " + SYSTEM);
     }
     return body.getResult();
@@ -40,7 +42,7 @@ public class MdmService {
     String ocpApimSubscriptionKey = mdmConfiguration.getOcpApimSubscriptionKey();
 
     ResponseEntity<List<MdmCountry>> responseEntity =
-        mdmClient.getCountries(ocpApimSubscriptionKey, SYSTEM, blocks);
+        fromMdm(() -> mdmClient.getCountries(ocpApimSubscriptionKey, SYSTEM, blocks));
 
     return bodyFrom(responseEntity, "countries", blocks).stream()
         .filter(c -> !"GB".equals(c.getEffectiveAlpha2()))
@@ -49,8 +51,9 @@ public class MdmService {
   }
 
   public MdmProductPage<MdmProductSearchResult> searchProducts(String query, int page, int size) {
-    ResponseEntity<MdmProductPage<MdmProductSearchResult>> responseEntity = mdmClient.searchProducts(
-        mdmConfiguration.getOcpApimSubscriptionKey(), query, DATASET, page, size);
+    ResponseEntity<MdmProductPage<MdmProductSearchResult>> responseEntity = fromMdm(
+        () -> mdmClient.searchProducts(
+            mdmConfiguration.getOcpApimSubscriptionKey(), query, DATASET, page, size));
     return pageFrom(responseEntity, "product search", query);
   }
 
@@ -58,14 +61,15 @@ public class MdmService {
     if (codes.isEmpty()) {
       return List.of();
     }
-    ResponseEntity<List<MdmCommodity>> responseEntity = mdmClient.getCommodities(
-        mdmConfiguration.getOcpApimSubscriptionKey(), String.join(",", codes), DATASET);
+    ResponseEntity<List<MdmCommodity>> responseEntity = fromMdm(() -> mdmClient.getCommodities(
+        mdmConfiguration.getOcpApimSubscriptionKey(), String.join(",", codes), DATASET));
     return bodyFrom(responseEntity, "commodities", codes);
   }
 
   public MdmProductPage<MdmSpecies> getCommoditySpecies(String code, int page, int size) {
-    ResponseEntity<MdmProductPage<MdmSpecies>> responseEntity = mdmClient.getCommoditySpecies(
-        mdmConfiguration.getOcpApimSubscriptionKey(), code, DATASET, page, size);
+    ResponseEntity<MdmProductPage<MdmSpecies>> responseEntity = fromMdm(
+        () -> mdmClient.getCommoditySpecies(
+            mdmConfiguration.getOcpApimSubscriptionKey(), code, DATASET, page, size));
     return pageFrom(responseEntity, "commodity species", code);
   }
 
@@ -74,7 +78,7 @@ public class MdmService {
     logTraceId(responseEntity, requestName, requestedFor);
     T body = responseEntity.getBody();
     if (body == null) {
-      throw new MdmUnusableResponseException(
+      throw new MdmUnavailableException(
           "MDM returned no body for %s request for %s".formatted(requestName, requestedFor));
     }
     return body;
@@ -84,11 +88,11 @@ public class MdmService {
       String requestName, Object requestedFor) {
     MdmProductPage<T> page = bodyFrom(responseEntity, requestName, requestedFor);
     if (page.content() == null) {
-      throw new MdmUnusableResponseException(
+      throw new MdmUnavailableException(
           "MDM returned a %s page with no content for %s".formatted(requestName, requestedFor));
     }
     if (page.totalElements() == null) {
-      throw new MdmUnusableResponseException(
+      throw new MdmUnavailableException(
           "MDM returned a %s page with no total for %s".formatted(requestName, requestedFor));
     }
     return page;
@@ -99,6 +103,14 @@ public class MdmService {
     return country.getBlocks().stream()
         .anyMatch(b -> requestedBlock.equals(b.getName())
                  && Boolean.TRUE.equals(b.getIncludeCountry()));
+  }
+
+  private static <T> T fromMdm(Supplier<T> call) {
+    try {
+      return call.get();
+    } catch (RetryableException ex) {
+      throw new MdmUnavailableException("MDM unavailable", ex);
+    }
   }
 
   private static void logTraceId(ResponseEntity<?> responseEntity, String requestName,
