@@ -1,0 +1,29 @@
+{
+  "content": [
+    {
+      "resultType": "species",
+      "speciesName": "Bison bison",
+      "commonName": "Bisons Spp",
+      "commodityCnCode": "0102",
+      "dataset": "gbnag"
+    },
+    {
+      "resultType": "species",
+      "speciesName": "Bison bonasus",
+      "commonName": "European Bison",
+      "commodityCnCode": "01061900",
+      "dataset": "gbnag"
+    },
+    {
+      "resultType": "species",
+      "speciesName": "Bison bonasus",
+      "commonName": "European Bison",
+      "commodityCnCode": "0102",
+      "dataset": "gbnag"
+    }
+  ],
+  "page": 0,
+  "size": 100,
+  "totalElements": 3,
+  "totalPages": 1
+}

@@ -3,12 +3,15 @@ package uk.gov.defra.trade.imports.metrics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static uk.gov.defra.trade.imports.metrics.CapturingLogAppender.keyValues;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 
 class ExternalCallMetricsTest {
@@ -87,6 +90,27 @@ class ExternalCallMetricsTest {
   }
 
   @Test
+  void measure_shouldLogTheExceptionThatFailedTheCall() {
+    IOException failure = new IOException("connection reset");
+
+    try (var logs = CapturingLogAppender.attachedTo(ExternalCallMetrics.class)) {
+      assertThatThrownBy(
+              () ->
+                  metrics.measure(
+                      ExternalCall.MDM_GET_PORTS_OF_ENTRY,
+                      () -> {
+                        throw failure;
+                      },
+                      r -> false))
+          .isSameAs(failure);
+
+      var throwable = logs.events().getFirst().getThrowableProxy();
+      assertThat(throwable.getClassName()).isEqualTo(IOException.class.getName());
+      assertThat(throwable.getMessage()).isEqualTo("connection reset");
+    }
+  }
+
+  @Test
   void measure_shouldRethrowTheSameRuntimeException_andRecordAFailure() {
     IllegalStateException failure = new IllegalStateException("boom");
 
@@ -120,6 +144,74 @@ class ExternalCallMetricsTest {
     metrics.recordCall(new ExternalCall("discovery", "lookup", null), Duration.ofMillis(5), false);
 
     assertThat(environment.documents().getFirst().has("Interface")).isFalse();
+  }
+
+  @Test
+  void record_shouldLogTheCallWithItsOutcomeAndDuration() {
+    try (var logs = CapturingLogAppender.attachedTo(ExternalCallMetrics.class)) {
+      metrics.recordCall(ExternalCall.MDM_GET_COUNTRIES, Duration.ofMillis(250), false);
+
+      assertThat(logs.events()).hasSize(1);
+      var event = logs.events().getFirst();
+      assertThat(event.getFormattedMessage())
+          .isEqualTo("External call mdm/get-countries success in 250 ms");
+      assertThat(keyValues(event))
+          .containsEntry("event.category", "external-call")
+          .containsEntry("event.action", "mdm/get-countries")
+          .containsEntry("event.outcome", "success")
+          .containsEntry("event.duration", 250_000_000L);
+    }
+  }
+
+  @Test
+  void record_shouldLogAFailedCallAsAFailure() {
+    try (var logs = CapturingLogAppender.attachedTo(ExternalCallMetrics.class)) {
+      metrics.recordCall(ExternalCall.TRADE_TOKEN, Duration.ofMillis(5), true);
+
+      var event = logs.events().getFirst();
+      assertThat(event.getFormattedMessage())
+          .isEqualTo("External call trade-token/client-credentials-token failure in 5 ms");
+      assertThat(keyValues(event)).containsEntry("event.outcome", "failure");
+    }
+  }
+
+  @Test
+  void record_shouldPutNoEventFieldsInTheMdc() {
+    // When
+    metrics.recordCall(ExternalCall.MDM_GET_COUNTRIES, Duration.ofMillis(5), false);
+
+    // Then: anything left in the MDC would be written flat on every later line from this thread
+    assertThat(MDC.get("event.category")).isNull();
+    assertThat(MDC.get("event.action")).isNull();
+    assertThat(MDC.get("event.outcome")).isNull();
+    assertThat(MDC.get("event.duration")).isNull();
+  }
+
+  @Test
+  void record_shouldStillLogTheCall_whenEmfIsDisabled() {
+    var disabled =
+        new ExternalCallMetrics(false, NAMESPACE, () -> new MetricsLogger(environment));
+
+    try (var logs = CapturingLogAppender.attachedTo(ExternalCallMetrics.class)) {
+      disabled.recordCall(ExternalCall.TRADE_TOKEN, Duration.ofMillis(5), false);
+
+      assertThat(logs.events()).hasSize(1);
+    }
+  }
+
+  @Test
+  void lastCallSucceededByDependency_shouldBeEmpty_beforeAnyCall() {
+    assertThat(metrics.lastCallSucceededByDependency()).isEmpty();
+  }
+
+  @Test
+  void lastCallSucceededByDependency_shouldHoldTheMostRecentOutcomeOfEachDependency() {
+    metrics.recordCall(ExternalCall.TRADE_TOKEN, Duration.ofMillis(5), false);
+    metrics.recordCall(ExternalCall.MDM_GET_COUNTRIES, Duration.ofMillis(5), false);
+    metrics.recordCall(ExternalCall.MDM_GET_PORTS_OF_ENTRY, Duration.ofMillis(5), true);
+
+    assertThat(metrics.lastCallSucceededByDependency())
+        .containsOnly(Map.entry("trade-token", true), Map.entry("mdm", false));
   }
 
   @Test

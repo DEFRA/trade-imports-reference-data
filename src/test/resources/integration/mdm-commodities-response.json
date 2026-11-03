@@ -1,0 +1,23 @@
+[
+  {
+    "code": "0102",
+    "description": "Live bovine animals",
+    "isGerminal": false,
+    "isSelectable": true,
+    "speciesCount": 15
+  },
+  {
+    "code": "01061900",
+    "description": "Other",
+    "isGerminal": false,
+    "isSelectable": true,
+    "speciesCount": 2
+  },
+  {
+    "code": "05111000",
+    "description": "Bovine semen",
+    "isGerminal": true,
+    "isSelectable": true,
+    "speciesCount": 1
+  }
+]

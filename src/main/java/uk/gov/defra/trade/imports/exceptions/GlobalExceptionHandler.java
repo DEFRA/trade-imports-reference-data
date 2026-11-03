@@ -1,27 +1,23 @@
 package uk.gov.defra.trade.imports.exceptions;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Global exception handler for REST API error responses.
- * <p>
- * Uses Spring 6 ProblemDetail (RFC 7807) for standardized error responses. Includes request trace
- * ID in error responses for log correlation.
- * <p>
- * CDP Compliance: - Structured error responses with trace ID - Proper HTTP status codes (400, 404,
- * 409, 500) - Validation errors with field-level details - Logs errors with trace ID for
- * troubleshooting
+ * Answers application exceptions with RFC 7807 problem details that carry the request's trace id.
  */
 @RestControllerAdvice
 @Slf4j
@@ -29,13 +25,10 @@ public class GlobalExceptionHandler {
 
   private static final String MDC_TRACE_ID = "trace.id";
 
-  /**
-   * Handle validation errors (400 Bad Request).
-   */
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ProblemDetail handleValidationException(MethodArgumentNotValidException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
-    log.warn("Validation error (trace: {}): {}", traceId, ex.getMessage());
+    log.warn("Validation error (trace: {}): {}", traceId, ex.getMessage(), ex);
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
         HttpStatus.BAD_REQUEST,
@@ -45,12 +38,10 @@ public class GlobalExceptionHandler {
     problemDetail.setType(URI.create("https://api.cdp.defra.cloud/problems/validation-error"));
     problemDetail.setTitle("Validation Error");
 
-    // Add trace ID for log correlation
     if (traceId != null) {
       problemDetail.setProperty("traceId", traceId);
     }
 
-    // Add field-level validation errors
     Map<String, String> errors = new HashMap<>();
     for (FieldError error : ex.getBindingResult().getFieldErrors()) {
       errors.put(error.getField(), error.getDefaultMessage());
@@ -60,13 +51,34 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  /**
-   * Handle not found errors (404 Not Found).
-   */
+  @ExceptionHandler({
+      ConstraintViolationException.class,
+      HttpMessageNotReadableException.class,
+      MethodArgumentTypeMismatchException.class
+  })
+  public ProblemDetail handleBadRequestException(Exception ex) {
+    String traceId = MDC.get(MDC_TRACE_ID);
+    log.warn("Bad request (trace: {})", traceId, ex);
+
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.BAD_REQUEST,
+        "The request is not valid"
+    );
+
+    problemDetail.setType(URI.create("https://api.cdp.defra.cloud/problems/bad-request"));
+    problemDetail.setTitle("Bad Request");
+
+    if (traceId != null) {
+      problemDetail.setProperty("traceId", traceId);
+    }
+
+    return problemDetail;
+  }
+
   @ExceptionHandler(NotFoundException.class)
   public ProblemDetail handleNotFoundException(NotFoundException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
-    log.warn("Resource not found (trace: {}): {}", traceId, ex.getMessage());
+    log.warn("Resource not found (trace: {}): {}", traceId, ex.getMessage(), ex);
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
         HttpStatus.NOT_FOUND,
@@ -83,13 +95,10 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  /**
-   * Handle conflict errors (409 Conflict).
-   */
   @ExceptionHandler(ConflictException.class)
   public ProblemDetail handleConflictException(ConflictException ex) {
     String traceId = MDC.get(MDC_TRACE_ID);
-    log.warn("Resource conflict (trace: {}): {}", traceId, ex.getMessage());
+    log.warn("Resource conflict (trace: {}): {}", traceId, ex.getMessage(), ex);
 
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
         HttpStatus.CONFLICT,
@@ -106,13 +115,35 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-  /**
-   * Handle unexpected errors (500 Internal Server Error).
-   * <p>
-   * Note: Does NOT catch Spring framework exceptions like NoResourceFoundException (404) or other
-   * HTTP-related exceptions. Only catches application-level exceptions. This allows Spring to
-   * handle its own exceptions appropriately (e.g., 404 for missing endpoints).
-   */
+  @ExceptionHandler(MdmUnavailableException.class)
+  public ProblemDetail handleMdmUnavailable(MdmUnavailableException ex) {
+    return serviceUnavailable("MDM unavailable", ex);
+  }
+
+  @ExceptionHandler(TokenEndpointUnavailableException.class)
+  public ProblemDetail handleTokenEndpointUnavailable(TokenEndpointUnavailableException ex) {
+    return serviceUnavailable("Token endpoint unavailable", ex);
+  }
+
+  private ProblemDetail serviceUnavailable(String logLine, Exception ex) {
+    String traceId = MDC.get(MDC_TRACE_ID);
+    log.warn("{} (trace: {})", logLine, traceId, ex);
+
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "Reference data is unavailable. Please try again later."
+    );
+
+    problemDetail.setType(URI.create("https://api.cdp.defra.cloud/problems/service-unavailable"));
+    problemDetail.setTitle("Service Unavailable");
+
+    if (traceId != null) {
+      problemDetail.setProperty("traceId", traceId);
+    }
+
+    return problemDetail;
+  }
+
   @ExceptionHandler({
       RuntimeException.class,
       IllegalStateException.class,

@@ -1,0 +1,369 @@
+{
+  "content": [
+    {
+      "resultType": "species",
+      "id": "0102-693e4af4-1527-aa67-fd4d-4295fe923b8a",
+      "speciesName": "Bibos spp.",
+      "commonName": "Cattle",
+      "commonNames": [
+        "Cattle"
+      ],
+      "languageId": "la",
+      "eppoCode": null,
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": "Animalia",
+        "phylum": "Chordata",
+        "class": "Mammalia",
+        "order": null,
+        "family": "Bovidae"
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-ae653662-640c-2315-561c-b35e2396c0d2",
+      "speciesName": "Bison",
+      "commonName": "Bison",
+      "commonNames": [
+        "Bison"
+      ],
+      "languageId": "la",
+      "eppoCode": "1BISOG",
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": "Mammalia",
+        "order": null,
+        "family": "Bovidae"
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-e3beccb7-294d-5478-8f8e-96e9b5027bff",
+      "speciesName": "Bison bison",
+      "commonName": "Bisons Spp",
+      "commonNames": [
+        "Bisons Spp",
+        "American Bison"
+      ],
+      "languageId": "la",
+      "eppoCode": "BISOBI",
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": "Mammalia",
+        "order": null,
+        "family": "Bovidae"
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-b5858449-a155-8e90-5b2e-9f37c5d73a48",
+      "speciesName": "Bison bonasus",
+      "commonName": "European Bison",
+      "commonNames": [
+        "European Bison"
+      ],
+      "languageId": "la",
+      "eppoCode": null,
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": null,
+        "order": null,
+        "family": null
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-6d7502bd-9cae-7007-917d-e579f403abc7",
+      "speciesName": "Bos",
+      "commonName": "Cattle",
+      "commonNames": [
+        "Cattle"
+      ],
+      "languageId": "la",
+      "eppoCode": "1BOVSG",
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": "Mammalia",
+        "order": null,
+        "family": "Bovidae"
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-88305625-d9fd-3626-b16d-6c565c7b94c7",
+      "speciesName": "Bos sp.",
+      "commonName": "Cattle",
+      "commonNames": [
+        "Cattle"
+      ],
+      "languageId": "la",
+      "eppoCode": null,
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": null,
+        "order": null,
+        "family": null
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-2de1a45e-21b3-b839-5c78-20daaf9b5fd4",
+      "speciesName": "Bos taurus",
+      "commonName": "Cattle or Cow",
+      "commonNames": [
+        "Cattle or Cow",
+        "Aurochs"
+      ],
+      "languageId": "la",
+      "eppoCode": "BOVSTA",
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": "Mammalia",
+        "order": null,
+        "family": "Bovidae"
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-8359e945-5529-907c-b782-0555124c5890",
+      "speciesName": "Bubalus",
+      "commonName": "water buffalos",
+      "commonNames": [
+        "water buffalos"
+      ],
+      "languageId": "la",
+      "eppoCode": "1BUBAG",
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": "Mammalia",
+        "order": null,
+        "family": "Bovidae"
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-c7b4c871-d24c-0807-c4bf-273bafbb971a",
+      "speciesName": "Bubalus bubalis",
+      "commonName": "Water Buffalo",
+      "commonNames": [
+        "Water Buffalo"
+      ],
+      "languageId": "la",
+      "eppoCode": "BUBABU",
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": "Mammalia",
+        "order": null,
+        "family": "Bovidae"
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-b23f6ef1-7336-7788-a02a-d5102ad5cbbe",
+      "speciesName": "Elephas maximus",
+      "commonName": "Asian Elephant",
+      "commonNames": [
+        "Asian Elephant"
+      ],
+      "languageId": "la",
+      "eppoCode": null,
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": null,
+        "order": null,
+        "family": null
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-1bff3636-cd1b-3d31-37f7-0d1bc4a09e29",
+      "speciesName": "Loxodonta africana",
+      "commonName": "African elephant",
+      "commonNames": [
+        "African elephant"
+      ],
+      "languageId": "la",
+      "eppoCode": null,
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": null,
+        "order": null,
+        "family": null
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-fe23d82c-1f24-c103-5b61-0e74322e5172",
+      "speciesName": "Novibos spp.",
+      "commonName": "Cattle",
+      "commonNames": [
+        "Cattle"
+      ],
+      "languageId": "la",
+      "eppoCode": null,
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": "Animalia",
+        "phylum": "Chordata",
+        "class": "Mammalia",
+        "order": null,
+        "family": "Bovidae"
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-2248f32a-2914-2e55-a65e-87292415cb0f",
+      "speciesName": "Ovibos",
+      "commonName": "Muskoxen",
+      "commonNames": [
+        "Muskoxen"
+      ],
+      "languageId": "la",
+      "eppoCode": "1OVIBG",
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": "Mammalia",
+        "order": null,
+        "family": "Bovidae"
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-56e253e5-b136-e6e9-4fc4-74a65ba69b9c",
+      "speciesName": "Poephagus spp.",
+      "commonName": "Animals",
+      "commonNames": [
+        "Animals"
+      ],
+      "languageId": "la",
+      "eppoCode": null,
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": "Animalia",
+        "phylum": null,
+        "class": null,
+        "order": null,
+        "family": null
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    },
+    {
+      "resultType": "species",
+      "id": "0102-2f997c8b-975c-2325-ca56-01622a2a6d9b",
+      "speciesName": "Syncerus",
+      "commonName": "African Buffaloes",
+      "commonNames": [
+        "African Buffaloes"
+      ],
+      "languageId": "la",
+      "eppoCode": "1SYKRG",
+      "faoCode": null,
+      "taxonomy": {
+        "kingdom": null,
+        "phylum": null,
+        "class": "Mammalia",
+        "order": null,
+        "family": "Bovidae"
+      },
+      "commodityCnCode": "0102",
+      "chedType": null,
+      "dataset": "gbnag",
+      "certificateModelCodes": [],
+      "certificateModelIds": []
+    }
+  ],
+  "page": 0,
+  "size": 100,
+  "totalElements": 15
+}

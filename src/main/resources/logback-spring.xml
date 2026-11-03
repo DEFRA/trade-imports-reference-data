@@ -12,7 +12,8 @@
         <!-- Filter out /health endpoint to reduce noise -->
         <filter class="uk.gov.defra.trade.imports.filter.HealthCheckFilter"/>
 
-        <encoder class="co.elastic.logging.logback.EcsEncoder">
+        <!-- The ECS encoder, writing event.* key-value pairs as a nested object: CDP drops flat event.* keys -->
+        <encoder class="uk.gov.defra.trade.imports.logging.EcsEventEncoder">
             <serviceVersion>${service.version}</serviceVersion>
             <serviceName>${service.name}</serviceName>
             <!-- ECS encoder automatically includes all MDC fields -->

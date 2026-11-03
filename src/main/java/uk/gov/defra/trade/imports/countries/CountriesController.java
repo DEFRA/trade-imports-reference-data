@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.defra.trade.imports.client.MdmService;
+import uk.gov.defra.trade.imports.metrics.LookupMetrics;
 
 @Slf4j
 @RestController
@@ -19,11 +20,13 @@ import uk.gov.defra.trade.imports.client.MdmService;
 public class CountriesController {
 
   private final MdmService countriesService;
+  private final LookupMetrics lookupMetrics;
 
   @GetMapping()
   @Timed("controller.getCountries.time")
   public ResponseEntity<List<Country>> getCountries(
       @RequestParam(required = false, value = "blocks") String blocks) {
+    lookupMetrics.recordLookup(LookupMetrics.COUNTRIES);
     List<Country> countries = countriesService.getCountries(blocks)
         .stream()
         .map(Country::new)
