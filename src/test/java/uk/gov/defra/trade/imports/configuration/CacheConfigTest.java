@@ -5,14 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCache;
+import uk.gov.defra.trade.imports.metrics.CacheMetrics;
 
 class CacheConfigTest {
 
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+    private final CacheMetrics cacheMetrics = new CacheMetrics(meterRegistry);
     private CacheConfig cacheConfigUnderTest;
 
     @BeforeEach
@@ -37,7 +41,7 @@ class CacheConfigTest {
         final Caffeine<Object, Object> caffeine = Caffeine.newBuilder();
 
         // Run the test
-        final CacheManager result = cacheConfigUnderTest.cacheManager(caffeine);
+        final CacheManager result = cacheConfigUnderTest.cacheManager(caffeine, cacheMetrics);
         result.getCache("IDENTITY_TOKEN_CACHE").put("CACHE_KEY", "jwtToken");
 
         // Verify the results
@@ -50,7 +54,8 @@ class CacheConfigTest {
     @Test
     void mdmCaches_shouldRecordHitsAndMisses() {
         // Given
-        final CacheManager result = cacheConfigUnderTest.cacheManager(Caffeine.newBuilder());
+        final CacheManager result =
+            cacheConfigUnderTest.cacheManager(Caffeine.newBuilder(), cacheMetrics);
 
         for (String name : List.of(CacheConfig.MDM_COUNTRIES_CACHE, CacheConfig.MDM_POE_CACHE)) {
             CaffeineCache cache = (CaffeineCache) result.getCache(name);
@@ -63,6 +68,10 @@ class CacheConfigTest {
             // Then
             assertThat(cache.getNativeCache().stats().missCount()).isEqualTo(1);
             assertThat(cache.getNativeCache().stats().hitCount()).isEqualTo(1);
+            assertThat(meterRegistry.get("cache.miss").tag("cache", name).counter().count())
+                .isEqualTo(1);
+            assertThat(meterRegistry.get("cache.hit").tag("cache", name).counter().count())
+                .isEqualTo(1);
         }
     }
 }

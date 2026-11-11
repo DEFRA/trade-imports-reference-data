@@ -2,21 +2,25 @@ package uk.gov.defra.trade.imports.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
 class LookupMetricsTest {
 
-  private final CapturingEmfEnvironment environment = new CapturingEmfEnvironment();
-  private final LookupMetrics metrics = new LookupMetrics(environment.writer());
+  private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+  private final LookupMetrics metrics = new LookupMetrics(meterRegistry);
 
   @Test
-  void recordLookup_shouldCountOneLookupOfTheGivenType() {
+  void recordLookup_countsOneLookupTaggedWithItsType() {
     metrics.recordLookup(LookupMetrics.PORTS_OF_ENTRY);
+    metrics.recordLookup(LookupMetrics.PORTS_OF_ENTRY);
+    metrics.recordLookup(LookupMetrics.COUNTRIES);
 
-    assertThat(environment.documents()).hasSize(1);
-    JsonNode document = environment.documents().getFirst();
-    assertThat(document.get("LookupType").asText()).isEqualTo("ports-of-entry");
-    assertThat(document.get("Lookup").asInt()).isEqualTo(1);
+    assertThat(count("ports-of-entry")).isEqualTo(2);
+    assertThat(count("countries")).isEqualTo(1);
+  }
+
+  private double count(String lookupType) {
+    return meterRegistry.get("lookup").tag("lookup.type", lookupType).counter().count();
   }
 }

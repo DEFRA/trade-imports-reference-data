@@ -8,6 +8,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import uk.gov.defra.trade.imports.metrics.CacheMetrics;
 
 @Configuration
 @EnableCaching
@@ -27,7 +28,7 @@ public class CacheConfig {
     }
 
     @Bean
-    public CacheManager cacheManager(Caffeine<Object, Object> caffeine) {
+    public CacheManager cacheManager(Caffeine<Object, Object> caffeine, CacheMetrics cacheMetrics) {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager("IDENTITY_TOKEN_CACHE");
         cacheManager.setCaffeine(caffeine);
         // The primary purpose of caching MDM responses is to rate-limit our calls to MDM,
@@ -37,7 +38,7 @@ public class CacheConfig {
             Caffeine.newBuilder()
                 .maximumSize(20)
                 .expireAfterWrite(mdmCacheTtlMinutes, TimeUnit.MINUTES)
-                .recordStats()
+                .recordStats(() -> cacheMetrics.statsCounterFor(MDM_COUNTRIES_CACHE))
                 .build()
         );
         cacheManager.registerCustomCache(
@@ -45,7 +46,7 @@ public class CacheConfig {
             Caffeine.newBuilder()
                 .maximumSize(20)
                 .expireAfterWrite(mdmCacheTtlMinutes, TimeUnit.MINUTES)
-                .recordStats()
+                .recordStats(() -> cacheMetrics.statsCounterFor(MDM_POE_CACHE))
                 .build()
         );
         return cacheManager;

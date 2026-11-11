@@ -1,5 +1,6 @@
 package uk.gov.defra.trade.imports.commodities;
 
+import io.micrometer.core.annotation.Timed;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ public class SpeciesCheckService {
 
   private final MdmService mdmService;
 
+  @Timed("service.checkSpecies.time")
   public SpeciesCheckResponse check(SpeciesCheckRequest request) {
     Map<String, Set<String>> latinNamesByCode = request.lines().stream()
         .map(CommodityLine::code)

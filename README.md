@@ -86,11 +86,12 @@ MDM `/search` returns two `resultType`s on one page. A species row is one specie
 
 ### Metrics
 
-- Every call to MDM and the Trade token endpoint is logged as well as sent as an EMF document, because EMF documents go to CloudWatch and cannot be searched in OpenSearch.
-- `DependencyAvailable` is for the dashboard only. It is not a Spring `HealthIndicator`, because CDP uses `/health` to decide whether a task is alive and would restart every task whenever a dependency went down.
-- Dependencies are not probed, because the MDM caches exist to limit how often the service calls MDM. `DependencyAvailable` is therefore the last real outcome, whatever its age. Countries and ports are cached for `cache.mdm.ttl-minutes` (60 by default); commodity search and species check are not, so `DependencyAvailable` for MDM reflects the latest search. The token is reused until it expires. The value stays at 1 after a dependency goes down until the next call, and one failed call holds it at 0 until a call succeeds.
-- How external calls are measured, and why at the Feign transport, is in [doc/observability.md](doc/observability.md).
-- The "dependency unavailable" alert is built on `ExternalCallFailure` over a time window, per `Dependency` and `Operation`, which reports only calls that happened.
+- Every metric is a Micrometer meter, published to CloudWatch as EMF by `EmfMeterRegistry`. Every call to MDM and the Trade token endpoint is logged as well, because EMF documents go to CloudWatch and cannot be searched in OpenSearch.
+- `external.dependency.available` is for the dashboard only. It is not a Spring `HealthIndicator`, because CDP uses `/health` to decide whether a task is alive and would restart every task whenever a dependency went down.
+- Dependencies are not probed, because the MDM caches exist to limit how often the service calls MDM. `external.dependency.available` is therefore the last real outcome, whatever its age. Countries and ports are cached for `cache.mdm.ttl-minutes` (60 by default); commodity search and species check are not, so the MDM reading reflects the latest search. The token is reused until it expires. The value stays at 1 after a dependency goes down until the next call, and one failed call holds it at 0 until a call succeeds.
+- The metrics, and how and why external calls are measured at the Feign transport, are in [doc/observability.md](doc/observability.md).
+- The "dependency unavailable" alert is built on `external.call.failure` over a time window, per `dependency` and `operation`, which reports only calls that happened.
+- `AWS_EMF_ENVIRONMENT` is left blank on CDP, so the EMF library finds the platform's agent. Set it to `Local` to write the EMF documents to stdout.
 - MongoDB is left out: it is configured, but nothing reads or writes through it.
 
 ### Configuration notes

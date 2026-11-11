@@ -1,31 +1,38 @@
 package uk.gov.defra.trade.imports.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.keyValues;
+import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.loggedBy;
+import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.durationCount;
+import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.failureTotal;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import feign.Client;
 import feign.MethodMetadata;
 import feign.Request;
 import feign.RequestTemplate;
 import feign.Response;
 import feign.Target;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.support.SpringMvcContract;
-import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 import uk.gov.defra.trade.imports.client.MdmClient;
 import uk.gov.defra.trade.imports.client.TradeApiClient;
 
 class ExternalCallFeignCapabilityTest {
 
-  private final CapturingEmfEnvironment environment = new CapturingEmfEnvironment();
+  private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+  private final LastCallOutcomes lastCallOutcomes = new LastCallOutcomes();
   private final ExternalCallFeignCapability capability =
-      new ExternalCallFeignCapability(
-          new ExternalCallMetrics(
-              true, "trade-imports-reference-data", () -> new MetricsLogger(environment)));
+      new ExternalCallFeignCapability(new ExternalCallRecorder(meterRegistry), lastCallOutcomes);
 
   @Test
   void everyFeignMethod_shouldBeMeasured() {
@@ -41,39 +48,100 @@ class ExternalCallFeignCapabilityTest {
   }
 
   @Test
-  void enrich_shouldMeasureAKnownCall() throws Exception {
-    Response served = response(503);
-    Client delegate = (request, options) -> served;
-    Client enriched = capability.enrich(delegate);
-    MethodMetadata getCountries =
-        new SpringMvcContract().parseAndValidateMetadata(MdmClient.class).stream()
-            .filter(metadata -> metadata.method().getName().equals("getCountries"))
-            .findFirst()
-            .orElseThrow();
-    var template =
-        new RequestTemplate()
-            .feignTarget(new Target.HardCodedTarget<>(MdmClient.class, "mdm-client", "http://mdm"))
-            .methodMetadata(getCountries);
+  void everyMeasuredCall_shouldBeToAKnownDependency() {
+    ExternalCallFeignCapability.CALLS_BY_CLIENT_METHOD
+        .values()
+        .forEach(call -> assertThat(ExternalCall.DEPENDENCIES).contains(call.dependency()));
+  }
 
-    Response returned = enriched.execute(request(template), new Request.Options());
+  @Test
+  void enrich_shouldRecordASuccess_whenTheResponseIsBelow400() throws IOException {
+    Response served = response(200);
+
+    Response returned =
+        enriched((request, options) -> served).execute(getCountriesRequest(), new Request.Options());
 
     assertThat(returned).isSameAs(served);
-    assertThat(environment.documents()).hasSize(1);
-    var document = environment.documents().getFirst();
-    assertThat(document.get("Operation").asText()).isEqualTo("get-countries");
-    assertThat(document.get("ExternalCallFailure").asInt()).isEqualTo(1);
+    assertThat(durationCount(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(failureTotal(meterRegistry, "mdm", "get-countries")).isZero();
+    assertThat(lastCallOutcomes.lastCallSucceeded("mdm")).contains(true);
+  }
+
+  @Test
+  void enrich_shouldRecordAFailureWithNoErrorFields_whenTheResponseIs400OrOver()
+      throws IOException {
+    Client enriched = enriched((request, options) -> response(503));
+
+    List<ILoggingEvent> lines =
+        loggedBy(ExternalCallRecorder.class, () -> execute(enriched, getCountriesRequest()));
+
+    assertThat(durationCount(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(failureTotal(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(lastCallOutcomes.lastCallSucceeded("mdm")).contains(false);
+    assertThat(keyValues(lines.getFirst()))
+        .containsEntry("event.outcome", "failure")
+        .doesNotContainKey("error.type");
+  }
+
+  @Test
+  void enrich_shouldRecordAFailureWithTheCauseAndRethrowIt_whenTheCallThrows() {
+    IOException refused = new IOException("connection refused");
+    Client enriched =
+        enriched(
+            (request, options) -> {
+              throw refused;
+            });
+
+    List<ILoggingEvent> lines =
+        loggedBy(
+            ExternalCallRecorder.class,
+            () ->
+                assertThatThrownBy(
+                        () -> enriched.execute(getCountriesRequest(), new Request.Options()))
+                    .isSameAs(refused));
+
+    assertThat(failureTotal(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(lastCallOutcomes.lastCallSucceeded("mdm")).contains(false);
+    assertThat(keyValues(lines.getFirst()))
+        .containsEntry("error.type", "java.io.IOException")
+        .containsEntry("error.message", "connection refused");
   }
 
   @Test
   void enrich_shouldPassAnUnknownCallThrough_unmeasured() throws IOException {
     Response served = response(200);
-    Client delegate = (request, options) -> served;
-    Client enriched = capability.enrich(delegate);
 
-    Response returned = enriched.execute(request(new RequestTemplate()), new Request.Options());
+    Response returned =
+        enriched((request, options) -> served)
+            .execute(request(new RequestTemplate()), new Request.Options());
 
     assertThat(returned).isSameAs(served);
-    assertThat(environment.documents()).isEmpty();
+    assertThat(meterRegistry.getMeters()).isEmpty();
+    assertThat(lastCallOutcomes.lastCallSucceeded("mdm")).isEmpty();
+  }
+
+  private Client enriched(Client delegate) {
+    return capability.enrich(delegate);
+  }
+
+  private static void execute(Client client, Request request) {
+    try {
+      client.execute(request, new Request.Options());
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private static Request getCountriesRequest() {
+    MethodMetadata getCountries =
+        new SpringMvcContract().parseAndValidateMetadata(MdmClient.class).stream()
+            .filter(metadata -> metadata.method().getName().equals("getCountries"))
+            .findFirst()
+            .orElseThrow();
+    return request(
+        new RequestTemplate()
+            .feignTarget(new Target.HardCodedTarget<>(MdmClient.class, "mdm-client", "http://mdm"))
+            .methodMetadata(getCountries));
   }
 
   private static Request request(RequestTemplate template) {

@@ -16,22 +16,17 @@ public class CapturingEmfEnvironment implements Environment {
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private final List<String> serialised = new ArrayList<>();
-  private final boolean failing;
 
-  public CapturingEmfEnvironment() {
-    this(false);
-  }
-
-  public CapturingEmfEnvironment(boolean failing) {
-    this.failing = failing;
-  }
-
-  public EmfMetricWriter writer() {
-    return new EmfMetricWriter(true, "trade-imports-reference-data", () -> new MetricsLogger(this));
+  public MetricsLogger metricsLogger() {
+    return new MetricsLogger(this);
   }
 
   public List<JsonNode> documents() {
     return serialised.stream().map(CapturingEmfEnvironment::parse).toList();
+  }
+
+  public List<JsonNode> documentsFor(String metricName) {
+    return documents().stream().filter(document -> document.has(metricName)).toList();
   }
 
   private static JsonNode parse(String document) {
@@ -64,7 +59,7 @@ public class CapturingEmfEnvironment implements Environment {
 
   @Override
   public void configureContext(MetricsContext context) {
-    // Adds no environment properties to the context.
+    // Adds no environment properties.
   }
 
   @Override
@@ -72,9 +67,6 @@ public class CapturingEmfEnvironment implements Environment {
     return new ISink() {
       @Override
       public void accept(MetricsContext context) {
-        if (failing) {
-          throw new IllegalStateException("sink unavailable");
-        }
         try {
           serialised.addAll(context.serialize());
         } catch (JsonProcessingException e) {
