@@ -68,8 +68,7 @@ class ExternalCallFeignCapabilityTest {
   }
 
   @Test
-  void enrich_shouldRecordAFailureWithNoErrorFields_whenTheResponseIs400OrOver()
-      throws IOException {
+  void enrich_shouldRecordAFailureWithNoErrorFields_whenTheResponseIs400OrOver() {
     Client enriched = enriched((request, options) -> response(503));
 
     List<ILoggingEvent> lines =
