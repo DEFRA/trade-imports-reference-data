@@ -28,11 +28,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import uk.gov.defra.trade.imports.configuration.CacheConfig;
 import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 import uk.gov.defra.trade.imports.metrics.ExternalCallRecorder;
 import uk.gov.defra.trade.imports.metrics.LastCallOutcomes;
 
+@DirtiesContext(classMode = ClassMode.BEFORE_CLASS)
 class ExternalCallRecorderIT extends IntegrationBase {
 
   private static final int EXPIRED_TOKEN_PRIORITY = 10;
