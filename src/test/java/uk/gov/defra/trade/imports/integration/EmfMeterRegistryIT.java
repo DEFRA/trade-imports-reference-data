@@ -46,12 +46,12 @@ class EmfMeterRegistryIT extends IntegrationBase {
   }
 
   @Test
-  void theMeterRegistryInUseIsTheEmfMeterRegistry() {
+  void meterRegistry_shouldBeTheEmfMeterRegistry_whenEmfIsEnabled() {
     assertThat(meterRegistry).isInstanceOf(EmfMeterRegistry.class);
   }
 
   @Test
-  void everyCustomMeterIsLetThroughTheAllowlist() {
+  void allowlist_shouldLetThroughAMeterUnderEachCustomEntry() {
     restTemplate.getForEntity("/countries", String.class);
     restTemplate.getForEntity("/commodities?q=d", String.class);
 
@@ -70,7 +70,7 @@ class EmfMeterRegistryIT extends IntegrationBase {
   }
 
   @Test
-  void theRegistryPublishesARecordedCallOnItsOwnSchedule() throws Exception {
+  void emfMeterRegistry_shouldPublishTheMdmCall_whenItsStepElapses() throws Exception {
     CapturedConsole console = captureSystemOut();
     try (console) {
       restTemplate.getForEntity("/countries", String.class);
@@ -103,7 +103,7 @@ class EmfMeterRegistryIT extends IntegrationBase {
 
   @ParameterizedTest
   @ValueSource(strings = {"cache.gets", "http.server.requests.active", "mongodb.driver.commands"})
-  void aMeterOffTheAllowlistIsNeverRegistered(String name) {
+  void allowlist_shouldNotRegisterAMeter_whenItsNameIsNotListed(String name) {
     meterRegistry.counter(name).increment();
 
     assertThat(meterRegistry.find(name).meter()).isNull();

@@ -39,7 +39,7 @@ class EmfMeterRegistryTest {
       new EmfMeterRegistry(NAMESPACE, STEP, clock, emf::metricsLogger);
 
   @Test
-  void publish_writesEveryTimerValueInMillisecondsWithItsTagsAsTheOnlyDimensions() {
+  void publish_shouldWriteEveryTimerValueInMillisecondsWithItsTagsAsTheOnlyDimensions() {
     Timer timer =
         Timer.builder("external.call.duration")
             .tags("dependency", "mongodb", "operation", "find")
@@ -61,7 +61,7 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_writesATimerOnlyWhenValuesWereRecordedSinceTheLastPublish() {
+  void publish_shouldSkipATimer_whenNoValueWasRecordedSinceTheLastPublish() {
     Timer.builder("service.get.time").register(registry).record(Duration.ofMillis(1));
     registry.publish();
 
@@ -71,7 +71,7 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_writesEveryDistributionSummaryValueAsACount_whenItHasNoBaseUnit() {
+  void publish_shouldWriteEveryDistributionSummaryValueAsACount_whenItHasNoBaseUnit() {
     DistributionSummary summary =
         DistributionSummary.builder("external.call.failure")
             .tags("dependency", "mongodb", "operation", "insert")
@@ -87,7 +87,7 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_writesACountersCountForTheLastMinute() {
+  void publish_shouldWriteACountersCountForTheLastStep() {
     Counter counter = Counter.builder("address.change").tag("change", "create").register(registry);
     counter.increment();
     counter.increment();
@@ -101,7 +101,7 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_writesAFiniteGaugeAndSkipsANaNOne() {
+  void publish_shouldWriteAFiniteGaugeAndSkipANaNOne() {
     AtomicInteger available = new AtomicInteger(1);
     Gauge.builder("external.dependency.available", available, AtomicInteger::get)
         .tag("dependency", "mongodb")
@@ -116,7 +116,7 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_writesAGaugeInBytes_whenItsBaseUnitIsBytes() {
+  void publish_shouldWriteAGaugeInBytes_whenItsBaseUnitIsBytes() {
     Gauge.builder("jvm.memory.used", () -> 2048)
         .baseUnit(BaseUnits.BYTES)
         .tag("area", "heap")
@@ -130,7 +130,7 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_writesAGaugeWithNoUnit_whenItHasNoBaseUnit() {
+  void publish_shouldWriteAGaugeWithNoUnit_whenItHasNoBaseUnit() {
     Gauge.builder("external.dependency.available", () -> 1).register(registry);
 
     registry.publish();
@@ -139,7 +139,7 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_writesAMeterWithNoTagsUnderAnEmptyDimensionSet() {
+  void publish_shouldWriteAMeterUnderAnEmptyDimensionSet_whenItHasNoTags() {
     Timer.builder("service.list.time").register(registry).record(Duration.ofMillis(3));
 
     registry.publish();
@@ -148,7 +148,7 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_writesADistributionSummaryWithNoUnit_whenItsBaseUnitIsNotBytes() {
+  void publish_shouldWriteADistributionSummaryWithNoUnit_whenItsBaseUnitIsNotBytes() {
     DistributionSummary.builder("pool.connections")
         .baseUnit("connections")
         .register(registry)
@@ -160,7 +160,7 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_writesEveryRecordedValue_whenMoreThan100AreRecorded() {
+  void publish_shouldWriteEveryRecordedValue_whenMoreThan100AreRecorded() {
     Timer timer = Timer.builder("external.call.duration").register(registry);
     IntStream.rangeClosed(1, 150).forEach(each -> timer.record(Duration.ofMillis(each)));
 
@@ -175,7 +175,7 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_stillWritesTheOtherMetersAndLogsAWarning_whenOneCannotBePublished() {
+  void publish_shouldStillWriteTheOtherMetersAndLogAWarning_whenOneCannotBePublished() {
     Counter.builder("bad.dimension").tag("action", " ").register(registry).increment();
     Timer.builder("service.create.time").register(registry).record(Duration.ofMillis(4));
     clock.add(STEP);
@@ -192,7 +192,7 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_skipsLongTaskTimersFunctionCountersFunctionTimersAndTimeGauges() {
+  void publish_shouldSkipLongTaskTimersFunctionCountersFunctionTimersAndTimeGauges() {
     LongTaskTimer.builder("long.task.timer").register(registry).start();
     FunctionCounter.builder("function.counter", new AtomicInteger(5), AtomicInteger::get)
         .register(registry);

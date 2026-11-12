@@ -30,13 +30,9 @@ spring:
 # CDP platform configuration
 cdp:
   certificate: ${TRUSTSTORE_CDP_ROOT_CA:}
-  metrics:
-    enabled: true
   service-version: ${SERVICE_VERSION:0.0.0-local}
   tracing:
     header-name: ${TRACING_HEADER:x-cdp-request-id}
-  cloudwatch:
-    endpoint: ${AWS_EMF_AGENT_ENDPOINT:http://localhost:4566}
   proxyUrl: ${HTTP_PROXY:}
 
 # AWS configuration
@@ -56,15 +52,12 @@ aws:
 logging:
   level:
     root: ${LOG_LEVEL:info}
-    uk.gov.defra.trade.imports.animals: ${LOG_LEVEL:DEBUG}
     org.springframework: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK:INFO}
     org.springframework.web: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB:INFO}
     org.mongodb: ${LOGGING_LEVEL_ORG_MONGODB_DRIVER:WARN}
     io.netty.handler.logging.LoggingHandler: WARN
 
 # Actuator endpoints
-# Production: Only health endpoint exposed (secure by default)
-# Development: Use dev profile (application-local.yml) for debugging endpoints
 management:
   endpoints:
     web:

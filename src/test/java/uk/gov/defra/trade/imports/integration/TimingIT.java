@@ -36,7 +36,7 @@ class TimingIT extends IntegrationBase {
   }
 
   @Test
-  void eachTimedMethod_addsOneCallToItsOwnTimer_whenCalledThroughItsEndpoint() {
+  void timedEndpoints_shouldAddOneCallToTheirOwnTimer_whenCalled() {
     Map<String, Long> before = counts();
 
     restTemplate.getForEntity("/countries", String.class);

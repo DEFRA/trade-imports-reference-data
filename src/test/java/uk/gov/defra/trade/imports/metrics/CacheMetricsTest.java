@@ -13,7 +13,7 @@ class CacheMetricsTest {
   private final CacheMetrics cacheMetrics = new CacheMetrics(meterRegistry);
 
   @Test
-  void statsCounter_countsEachHitAndMissTaggedWithTheCacheName() {
+  void statsCounterFor_shouldCountEachHitAndMissTaggedWithTheCacheName() {
     Cache<String, String> cache = cacheCountedBy("MDM_COUNTRIES_CACHE");
 
     cache.getIfPresent("key");
@@ -26,7 +26,7 @@ class CacheMetricsTest {
   }
 
   @Test
-  void statsCounter_keepsCaffeinesOwnStatistics() {
+  void statsCounterFor_shouldKeepCaffeinesHitAndMissCounts() {
     Cache<String, String> cache = cacheCountedBy("MDM_POE_CACHE");
 
     cache.getIfPresent("key");
@@ -38,7 +38,7 @@ class CacheMetricsTest {
   }
 
   @Test
-  void statsCounter_keepsEachCachesCountsApart() {
+  void statsCounterFor_shouldKeepEachCachesCountsApart() {
     Cache<String, String> countries = cacheCountedBy("MDM_COUNTRIES_CACHE");
     cacheCountedBy("MDM_POE_CACHE");
 

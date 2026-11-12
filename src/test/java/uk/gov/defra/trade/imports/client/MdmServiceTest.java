@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.loggedBy;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import feign.Request;
@@ -24,7 +25,6 @@ import org.springframework.http.ResponseEntity;
 import uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
 import uk.gov.defra.trade.imports.exceptions.MdmUnavailableException;
-import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 
 @ExtendWith(MockitoExtension.class)
 class MdmServiceTest {
@@ -207,12 +207,10 @@ class MdmServiceTest {
     when(mdmClient.searchProducts(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(okWithTraceHeader(new MdmProductPage<>(List.of(), 0L)));
 
-    try (var logs = CapturingLogAppender.attachedTo(MdmService.class)) {
-      mdmService.searchProducts("cattle", 0, 100);
+    var events = loggedBy(MdmService.class, () -> mdmService.searchProducts("cattle", 0, 100));
 
-      assertThat(logs.events()).extracting(ILoggingEvent::getFormattedMessage)
-          .containsExactly("MDM trace id for product search request for cattle is trace-abc-123");
-    }
+    assertThat(events).extracting(ILoggingEvent::getFormattedMessage)
+        .containsExactly("MDM trace id for product search request for cattle is trace-abc-123");
   }
 
   @Test
@@ -220,12 +218,11 @@ class MdmServiceTest {
     when(mdmClient.getCommoditySpecies(any(), any(), any(), anyInt(), anyInt()))
         .thenReturn(ResponseEntity.ok(new MdmProductPage<>(List.of(), 0L)));
 
-    try (var logs = CapturingLogAppender.attachedTo(MdmService.class)) {
-      mdmService.getCommoditySpecies("0102", 0, 100);
+    var events =
+        loggedBy(MdmService.class, () -> mdmService.getCommoditySpecies("0102", 0, 100));
 
-      assertThat(logs.events()).extracting(ILoggingEvent::getFormattedMessage)
-          .containsExactly("No MDM trace id returned for commodity species request for 0102");
-    }
+    assertThat(events).extracting(ILoggingEvent::getFormattedMessage)
+        .containsExactly("No MDM trace id returned for commodity species request for 0102");
   }
 
   @Test

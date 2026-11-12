@@ -10,22 +10,23 @@ public final class ExternalCallMeters {
 
   private ExternalCallMeters() {}
 
-  public static long durationCount(MeterRegistry registry, String dependency, String operation) {
+  public static long recordedCalls(MeterRegistry registry, String dependency, String operation) {
     return duration(registry, dependency, operation).map(Timer::count).orElse(0L);
   }
 
-  public static double durationMillis(
+  public static double totalDurationMillis(
       MeterRegistry registry, String dependency, String operation) {
     return duration(registry, dependency, operation)
         .map(timer -> timer.totalTime(TimeUnit.MILLISECONDS))
         .orElse(0.0);
   }
 
-  public static long failureCount(MeterRegistry registry, String dependency, String operation) {
+  public static long failureValuesRecorded(
+      MeterRegistry registry, String dependency, String operation) {
     return failure(registry, dependency, operation).map(DistributionSummary::count).orElse(0L);
   }
 
-  public static double failureTotal(MeterRegistry registry, String dependency, String operation) {
+  public static double failedCalls(MeterRegistry registry, String dependency, String operation) {
     return failure(registry, dependency, operation)
         .map(DistributionSummary::totalAmount)
         .orElse(0.0);

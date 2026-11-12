@@ -18,19 +18,19 @@ class DependencyAvailabilityMetricsTest {
   }
 
   @Test
-  void gauge_isRegisteredForEveryDependency() {
+  void gauge_shouldBeRegisteredForEveryDependency() {
     assertThat(meterRegistry.find("external.dependency.available").gauges())
         .extracting(gauge -> gauge.getId().getTag("dependency"))
         .containsExactlyInAnyOrder("mdm", "trade-token");
   }
 
   @Test
-  void gauge_isNaNUntilTheDependencyIsCalled() {
+  void gauge_shouldBeNaN_whenTheDependencyHasNotBeenCalled() {
     assertThat(gauge("mdm").value()).isNaN();
   }
 
   @Test
-  void gauge_isOneAfterASuccessfulCall() {
+  void gauge_shouldBeOne_whenTheLastCallSucceeded() {
     outcomes.recordSuccess("mdm");
 
     assertThat(gauge("mdm").value()).isEqualTo(1);
@@ -45,7 +45,7 @@ class DependencyAvailabilityMetricsTest {
   }
 
   @Test
-  void gauge_isZeroAfterAFailedCall_andLeavesTheOtherDependencyAlone() {
+  void gauge_shouldBeZeroForThatDependencyOnly_whenItsLastCallFailed() {
     outcomes.recordSuccess("mdm");
     outcomes.recordFailure("mdm");
 

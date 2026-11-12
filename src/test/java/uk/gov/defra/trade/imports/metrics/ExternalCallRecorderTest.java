@@ -5,10 +5,10 @@ import static uk.gov.defra.trade.imports.metrics.ExternalCall.MDM_GET_COUNTRIES;
 import static uk.gov.defra.trade.imports.metrics.ExternalCall.TRADE_TOKEN;
 import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.keyValues;
 import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.loggedBy;
-import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.durationCount;
-import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.durationMillis;
-import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.failureCount;
-import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.failureTotal;
+import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.recordedCalls;
+import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.totalDurationMillis;
+import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.failureValuesRecorded;
+import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.failedCalls;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -24,31 +24,31 @@ class ExternalCallRecorderTest {
   private final ExternalCallRecorder recorder = new ExternalCallRecorder(meterRegistry);
 
   @Test
-  void recordSuccess_recordsTheDurationAndAZeroFailure() {
+  void recordSuccess_shouldRecordTheDurationAndAZeroFailure() {
     recorder.recordSuccess(MDM_GET_COUNTRIES, Duration.ofMillis(7));
 
-    assertThat(durationCount(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
-    assertThat(durationMillis(meterRegistry, "mdm", "get-countries")).isEqualTo(7);
-    assertThat(failureCount(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
-    assertThat(failureTotal(meterRegistry, "mdm", "get-countries")).isZero();
+    assertThat(recordedCalls(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(totalDurationMillis(meterRegistry, "mdm", "get-countries")).isEqualTo(7);
+    assertThat(failureValuesRecorded(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(failedCalls(meterRegistry, "mdm", "get-countries")).isZero();
   }
 
   @Test
-  void recordFailure_recordsTheDurationAndAFailureOfOne() {
+  void recordFailure_shouldRecordTheDurationAndAFailureOfOne() {
     recorder.recordFailure(TRADE_TOKEN, Duration.ofMillis(3), new IOException("connection refused"));
 
-    assertThat(durationCount(meterRegistry, "trade-token", "client-credentials-token"))
+    assertThat(recordedCalls(meterRegistry, "trade-token", "client-credentials-token"))
         .isEqualTo(1);
-    assertThat(durationMillis(meterRegistry, "trade-token", "client-credentials-token"))
+    assertThat(totalDurationMillis(meterRegistry, "trade-token", "client-credentials-token"))
         .isEqualTo(3);
-    assertThat(failureCount(meterRegistry, "trade-token", "client-credentials-token"))
+    assertThat(failureValuesRecorded(meterRegistry, "trade-token", "client-credentials-token"))
         .isEqualTo(1);
-    assertThat(failureTotal(meterRegistry, "trade-token", "client-credentials-token"))
+    assertThat(failedCalls(meterRegistry, "trade-token", "client-credentials-token"))
         .isEqualTo(1);
   }
 
   @Test
-  void recordSuccess_logsOneInfoLineWithTheEventFieldsAndANanosecondDuration() {
+  void recordSuccess_shouldLogOneInfoLineWithTheEventFieldsAndANanosecondDuration() {
     List<ILoggingEvent> lines =
         loggedBy(
             ExternalCallRecorder.class,
@@ -68,7 +68,7 @@ class ExternalCallRecorderTest {
   }
 
   @Test
-  void recordFailure_logsOneWarnLineWithTheErrorFieldsAndTheThrowable_whenTheCallThrew() {
+  void recordFailure_shouldLogOneWarnLineWithTheErrorFieldsAndTheThrowable_whenTheCallThrew() {
     IOException cause = new IOException("connection refused");
 
     List<ILoggingEvent> lines =
@@ -92,7 +92,7 @@ class ExternalCallRecorderTest {
   }
 
   @Test
-  void recordFailure_logsOneWarnLineWithTheStatusCode_whenTheDependencyAnsweredWithAnError() {
+  void recordFailure_shouldLogOneWarnLineWithTheStatusCode_whenTheDependencyAnsweredWithAnError() {
     List<ILoggingEvent> lines =
         loggedBy(
             ExternalCallRecorder.class,
@@ -108,6 +108,6 @@ class ExternalCallRecorderTest {
         .containsEntry("http.response.status_code", 503)
         .doesNotContainKey("error.type");
     assertThat(line.getThrowableProxy()).isNull();
-    assertThat(failureTotal(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(failedCalls(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
   }
 }

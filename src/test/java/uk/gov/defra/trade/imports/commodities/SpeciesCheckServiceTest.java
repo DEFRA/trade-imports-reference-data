@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static uk.gov.defra.trade.imports.commodities.SpeciesCheckService.PAGE_SIZE;
+import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.loggedBy;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import java.util.Arrays;
@@ -26,7 +27,6 @@ import uk.gov.defra.trade.imports.client.MdmService;
 import uk.gov.defra.trade.imports.client.MdmSpecies;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
 import uk.gov.defra.trade.imports.exceptions.MdmUnavailableException;
-import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 
 @ExtendWith(MockitoExtension.class)
 class SpeciesCheckServiceTest {
@@ -60,13 +60,14 @@ class SpeciesCheckServiceTest {
   void check_logsTheCodeAndLatinNameOfEveryUnlistedLine() {
     givenMdmSpeciesPage("0102", 0, page(1, "Bos taurus"));
 
-    try (var logs = CapturingLogAppender.attachedTo(SpeciesCheckService.class)) {
-      service.check(request(line("0102", "Bos taurus"), line("0102", "Bison bison")));
+    var events =
+        loggedBy(
+            SpeciesCheckService.class,
+            () -> service.check(request(line("0102", "Bos taurus"), line("0102", "Bison bison"))));
 
-      assertThat(logs.events()).extracting(ILoggingEvent::getFormattedMessage).containsExactly(
-          "Species check found 1 lines MDM does not list under their code: "
-              + "[CommodityLine[code=0102, latinName=Bison bison]]");
-    }
+    assertThat(events).extracting(ILoggingEvent::getFormattedMessage).containsExactly(
+        "Species check found 1 lines MDM does not list under their code: "
+            + "[CommodityLine[code=0102, latinName=Bison bison]]");
   }
 
   @Test

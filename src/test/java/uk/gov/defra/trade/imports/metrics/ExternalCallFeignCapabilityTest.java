@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.keyValues;
 import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.loggedBy;
-import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.durationCount;
-import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.failureCount;
-import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.failureTotal;
+import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.recordedCalls;
+import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.failureValuesRecorded;
+import static uk.gov.defra.trade.imports.testsupport.ExternalCallMeters.failedCalls;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import feign.Client;
@@ -66,9 +66,9 @@ class ExternalCallFeignCapabilityTest {
         enriched((request, options) -> served).execute(getCountriesRequest(), new Request.Options());
 
     assertThat(returned).isSameAs(served);
-    assertThat(durationCount(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
-    assertThat(failureCount(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
-    assertThat(failureTotal(meterRegistry, "mdm", "get-countries")).isZero();
+    assertThat(recordedCalls(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(failureValuesRecorded(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(failedCalls(meterRegistry, "mdm", "get-countries")).isZero();
     assertThat(lastCallOutcomes.lastCallSucceeded("mdm")).contains(true);
   }
 
@@ -85,8 +85,8 @@ class ExternalCallFeignCapabilityTest {
             () -> returned.add(execute(enriched, getCountriesRequest())));
 
     assertThat(returned).containsExactly(served);
-    assertThat(durationCount(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
-    assertThat(failureTotal(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(recordedCalls(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(failedCalls(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
     assertThat(lastCallOutcomes.lastCallSucceeded("mdm")).contains(false);
     assertThat(keyValues(lines.getFirst()))
         .containsEntry("event.outcome", "failure")
@@ -110,7 +110,7 @@ class ExternalCallFeignCapabilityTest {
                         () -> enriched.execute(getCountriesRequest(), new Request.Options()))
                     .isSameAs(decoderError));
 
-    assertThat(failureTotal(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(failedCalls(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
     assertThat(lastCallOutcomes.lastCallSucceeded("mdm")).contains(false);
     assertThat(keyValues(lines.getFirst()))
         .containsEntry("error.type", "java.lang.IllegalStateException");
@@ -133,7 +133,7 @@ class ExternalCallFeignCapabilityTest {
                         () -> enriched.execute(getCountriesRequest(), new Request.Options()))
                     .isSameAs(refused));
 
-    assertThat(failureTotal(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
+    assertThat(failedCalls(meterRegistry, "mdm", "get-countries")).isEqualTo(1);
     assertThat(lastCallOutcomes.lastCallSucceeded("mdm")).contains(false);
     assertThat(keyValues(lines.getFirst()))
         .containsEntry("error.type", "java.io.IOException")
@@ -141,7 +141,7 @@ class ExternalCallFeignCapabilityTest {
   }
 
   @Test
-  void enrich_shouldPassAnUnknownCallThrough_unmeasured() throws IOException {
+  void enrich_shouldPassTheCallThroughUnmeasured_whenItIsUnknown() throws IOException {
     Response served = response(200);
 
     Response returned =

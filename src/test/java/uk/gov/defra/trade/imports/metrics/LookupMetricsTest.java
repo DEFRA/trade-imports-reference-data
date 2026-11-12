@@ -11,7 +11,7 @@ class LookupMetricsTest {
   private final LookupMetrics metrics = new LookupMetrics(meterRegistry);
 
   @Test
-  void recordLookup_countsOneLookupTaggedWithItsType() {
+  void recordLookup_shouldCountEachLookupUnderItsOwnType() {
     metrics.recordLookup(LookupMetrics.PORTS_OF_ENTRY);
     metrics.recordLookup(LookupMetrics.PORTS_OF_ENTRY);
     metrics.recordLookup(LookupMetrics.COUNTRIES);
