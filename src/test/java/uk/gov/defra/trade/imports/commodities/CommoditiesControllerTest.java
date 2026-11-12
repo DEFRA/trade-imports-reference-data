@@ -5,7 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,6 @@ import uk.gov.defra.trade.imports.client.MdmClient;
 import uk.gov.defra.trade.imports.client.MdmProductPage;
 import uk.gov.defra.trade.imports.client.MdmService;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
-import uk.gov.defra.trade.imports.metrics.CapturingEmfEnvironment;
 import uk.gov.defra.trade.imports.metrics.LookupMetrics;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,14 +27,14 @@ class CommoditiesControllerTest {
   @Mock
   private MdmClient mdmClient;
 
-  private final CapturingEmfEnvironment metricsEnvironment = new CapturingEmfEnvironment();
+  private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
   private CommoditiesController controller;
 
   @BeforeEach
   void setUp() {
     MdmService mdmService = new MdmService(mdmClient, new MdmConfiguration());
-    LookupMetrics lookupMetrics = new LookupMetrics(metricsEnvironment.writer());
+    LookupMetrics lookupMetrics = new LookupMetrics(meterRegistry);
     controller = new CommoditiesController(
         new CommoditySearchService(mdmService), new SpeciesCheckService(mdmService), lookupMetrics);
   }
@@ -61,10 +61,10 @@ class CommoditiesControllerTest {
   }
 
   private List<String> lookupTypesCounted() {
-    return metricsEnvironment.documents().stream()
-        .filter(document -> document.get("Lookup").asInt() == 1)
-        .map(document -> document.get("LookupType"))
-        .map(JsonNode::asText)
+    return meterRegistry.find("lookup").counters().stream()
+        .filter(counter -> counter.count() == 1)
+        .map(Counter::getId)
+        .map(id -> id.getTag("lookup.type"))
         .toList();
   }
 }

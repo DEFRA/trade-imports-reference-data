@@ -1,13 +1,13 @@
 package uk.gov.defra.trade.imports.configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.loggedBy;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
-import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 
 class ProxyConfigTest {
 
@@ -30,18 +30,16 @@ class ProxyConfigTest {
     void configureProxy_unusableUrlWithCredentials_setsNoProxyAndLogsTheUrlRedactedWithoutThrowable(String proxyUrl) {
         ReflectionTestUtils.setField(proxyConfig, "httpProxy", proxyUrl);
 
-        try (var logs = CapturingLogAppender.attachedTo(ProxyConfig.class)) {
-            proxyConfig.configureProxy();
+        var events = loggedBy(ProxyConfig.class, proxyConfig::configureProxy);
 
-            assertThat(System.getProperty("http.proxyHost")).isNull();
-            assertThat(logs.events()).isNotEmpty().allSatisfy(event -> {
-                assertThat(event.getFormattedMessage())
-                    .contains("***@")
-                    .doesNotContain("proxy-user")
-                    .doesNotContain("password");
-                assertThat(event.getThrowableProxy()).isNull();
-            });
-        }
+        assertThat(System.getProperty("http.proxyHost")).isNull();
+        assertThat(events).isNotEmpty().allSatisfy(event -> {
+            assertThat(event.getFormattedMessage())
+                .contains("***@")
+                .doesNotContain("proxy-user")
+                .doesNotContain("password");
+            assertThat(event.getThrowableProxy()).isNull();
+        });
     }
 
     @Test
