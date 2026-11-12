@@ -3,12 +3,12 @@ package uk.gov.defra.trade.imports.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static uk.gov.defra.trade.imports.testsupport.CapturedConsole.captureSystemOut;
+import static uk.gov.defra.trade.imports.testsupport.EmfDocuments.documentsFor;
 import static uk.gov.defra.trade.imports.testsupport.EmfDocuments.namespaceOf;
+import static uk.gov.defra.trade.imports.testsupport.EmfDocuments.unitOf;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +23,7 @@ import org.springframework.test.context.TestPropertySource;
 import uk.gov.defra.trade.imports.configuration.CacheConfig;
 import uk.gov.defra.trade.imports.metrics.EmfMeterRegistry;
 import uk.gov.defra.trade.imports.testsupport.CapturedConsole;
+import uk.gov.defra.trade.imports.testsupport.EmfDocuments;
 
 @TestPropertySource(
     properties = {
@@ -32,8 +33,6 @@ import uk.gov.defra.trade.imports.testsupport.CapturedConsole;
       "aws.emf.step=1s"
     })
 class EmfMeterRegistryIT extends IntegrationBase {
-
-  private static final ObjectMapper JSON = new ObjectMapper();
 
   @Autowired private MeterRegistry meterRegistry;
   @Autowired private TestRestTemplate restTemplate;
@@ -79,22 +78,27 @@ class EmfMeterRegistryIT extends IntegrationBase {
       await()
           .atMost(Duration.ofSeconds(10))
           .pollInterval(Duration.ofSeconds(1))
-          .until(() -> emfDocumentFor("external.call.duration", console).isPresent());
+          .until(() -> mdmCallDocument(console).isPresent());
     }
 
-    JsonNode document = emfDocumentFor("external.call.duration", console).orElseThrow();
+    JsonNode document = mdmCallDocument(console).orElseThrow();
     assertThat(namespaceOf(document)).isEqualTo("trade-imports-reference-data");
-    assertThat(document.path("dependency").asText()).isNotBlank();
+    assertThat(document.path("operation").asText()).isEqualTo("get-countries");
+    assertThat(unitOf(document)).isEqualTo("Milliseconds");
   }
 
-  private static Optional<JsonNode> emfDocumentFor(String metricName, CapturedConsole console)
-      throws IOException {
-    for (String line : console.text().split("\n")) {
-      if (line.contains("\"_aws\"") && line.contains("\"" + metricName + "\"")) {
-        return Optional.of(JSON.readTree(line));
-      }
-    }
-    return Optional.empty();
+  private static Optional<JsonNode> mdmCallDocument(CapturedConsole console) {
+    List<JsonNode> emfDocuments =
+        console
+            .text()
+            .lines()
+            .filter(line -> line.startsWith("{"))
+            .map(EmfDocuments::parse)
+            .filter(EmfDocuments::isEmfDocument)
+            .toList();
+    return documentsFor(emfDocuments, "external.call.duration").stream()
+        .filter(document -> "mdm".equals(document.path("dependency").asText()))
+        .findFirst();
   }
 
   @ParameterizedTest

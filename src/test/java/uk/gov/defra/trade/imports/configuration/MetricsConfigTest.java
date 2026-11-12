@@ -25,6 +25,7 @@ import org.springframework.boot.convert.ApplicationConversionService;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.convert.ConversionService;
+import software.amazon.cloudwatchlogs.emf.exception.InvalidNamespaceException;
 import uk.gov.defra.trade.imports.metrics.EmfMeterRegistry;
 
 @ExtendWith(MockitoExtension.class)
@@ -81,6 +82,48 @@ class MetricsConfigTest {
               .extracting(ILoggingEvent::getFormattedMessage)
               .containsExactly("Not publishing metrics to CloudWatch: aws.emf.enabled is not true");
         });
+  }
+
+  @Test
+  void emfMeterRegistry_shouldStopStartUp_whenTheNamespaceIsBlank() {
+    contextRunner
+        .withPropertyValues("aws.emf.enabled=true", "aws.emf.namespace=")
+        .run(
+            context ->
+                assertThat(context)
+                    .getFailure()
+                    .rootCause()
+                    .isInstanceOf(InvalidNamespaceException.class));
+  }
+
+  @Test
+  void emfMeterRegistry_shouldNameTheProperty_whenTheNamespaceIsInvalid() {
+    contextRunner
+        .withPropertyValues("aws.emf.enabled=true", "aws.emf.namespace=bad namespace!")
+        .run(
+            context ->
+                assertThat(context)
+                    .getFailure()
+                    .hasStackTraceContaining(
+                        "aws.emf.namespace is not a valid CloudWatch namespace"));
+  }
+
+  @Test
+  void emfMeterRegistry_shouldAcceptTheEnvironmentInAnyCase() {
+    contextRunner
+        .withPropertyValues("aws.emf.enabled=true", "aws.emf.environment=local")
+        .run(context -> assertThat(context).hasSingleBean(EmfMeterRegistry.class));
+  }
+
+  @Test
+  void emfPublishingOffLog_shouldBeCreated_whenEmfEnabledIsNotABoolean() {
+    contextRunner
+        .withPropertyValues("aws.emf.enabled=yes")
+        .run(
+            context -> {
+              assertThat(context).doesNotHaveBean(EmfMeterRegistry.class);
+              assertThat(context).hasSingleBean(ApplicationRunner.class);
+            });
   }
 
   @Test

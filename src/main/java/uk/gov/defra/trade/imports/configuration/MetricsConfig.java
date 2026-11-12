@@ -9,12 +9,15 @@ import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.cloudwatchlogs.emf.config.EnvironmentConfigurationProvider;
 import software.amazon.cloudwatchlogs.emf.environment.Environments;
+import software.amazon.cloudwatchlogs.emf.exception.InvalidNamespaceException;
 import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
+import software.amazon.cloudwatchlogs.emf.util.Validator;
 import uk.gov.defra.trade.imports.metrics.EmfMeterRegistry;
 
 /**
@@ -31,10 +34,15 @@ public class MetricsConfig {
   EmfMeterRegistry emfMeterRegistry(
       @Value("${aws.emf.namespace}") String namespace,
       @Value("${aws.emf.step}") Duration step,
-      @Value("${aws.emf.environment:}") String environment) {
-    if (!environment.isBlank()) {
-      EnvironmentConfigurationProvider.getConfig()
-          .setEnvironmentOverride(Environments.valueOf(environment));
+      @Value("${aws.emf.environment:}") Environments environment) {
+    try {
+      Validator.validateNamespace(namespace);
+    } catch (InvalidNamespaceException e) {
+      throw new IllegalStateException(
+          "aws.emf.namespace is not a valid CloudWatch namespace: " + e.getMessage(), e);
+    }
+    if (environment != null) {
+      EnvironmentConfigurationProvider.getConfig().setEnvironmentOverride(environment);
       log.info("Writing metrics to the {} EMF environment", environment);
     }
     EmfMeterRegistry emfRegistry =
@@ -45,7 +53,7 @@ public class MetricsConfig {
   }
 
   @Bean
-  @ConditionalOnProperty(name = "aws.emf.enabled", havingValue = "false", matchIfMissing = true)
+  @ConditionalOnExpression("!'${aws.emf.enabled:false}'.equalsIgnoreCase('true')")
   ApplicationRunner emfPublishingOffLog() {
     return args -> log.info("Not publishing metrics to CloudWatch: aws.emf.enabled is not true");
   }

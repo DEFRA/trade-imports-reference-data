@@ -2,7 +2,6 @@ package uk.gov.defra.trade.imports.metrics;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -10,10 +9,9 @@ import software.amazon.cloudwatchlogs.emf.environment.Environment;
 import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 import software.amazon.cloudwatchlogs.emf.model.MetricsContext;
 import software.amazon.cloudwatchlogs.emf.sinks.ISink;
+import uk.gov.defra.trade.imports.testsupport.EmfDocuments;
 
 public class CapturingEmfEnvironment implements Environment {
-
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private final List<String> serialised = new ArrayList<>();
 
@@ -22,19 +20,11 @@ public class CapturingEmfEnvironment implements Environment {
   }
 
   public List<JsonNode> documents() {
-    return serialised.stream().map(CapturingEmfEnvironment::parse).toList();
+    return serialised.stream().map(EmfDocuments::parse).toList();
   }
 
   public List<JsonNode> documentsFor(String metricName) {
-    return documents().stream().filter(document -> document.has(metricName)).toList();
-  }
-
-  private static JsonNode parse(String document) {
-    try {
-      return OBJECT_MAPPER.readTree(document);
-    } catch (JsonProcessingException e) {
-      throw new IllegalStateException(e);
-    }
+    return EmfDocuments.documentsFor(documents(), metricName);
   }
 
   @Override

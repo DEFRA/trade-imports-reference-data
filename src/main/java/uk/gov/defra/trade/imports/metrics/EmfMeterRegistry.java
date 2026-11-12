@@ -24,14 +24,15 @@ import software.amazon.cloudwatchlogs.emf.model.DimensionSet;
 import software.amazon.cloudwatchlogs.emf.model.Unit;
 
 /**
- * Publishes every meter to CloudWatch as Embedded Metric Format, once a step, in one namespace. A
- * meter's tags are its only dimensions.
+ * Publishes timers, distribution summaries, counters and gauges to CloudWatch as Embedded Metric
+ * Format, once a step, in one namespace. A meter's tags are its only dimensions.
  *
  * <p>Timers and distribution summaries publish every value recorded since the last publish, timers
  * in milliseconds. Counters publish the last step's count. Gauges publish their value when it is
- * finite. A gauge or distribution summary publishes in the CloudWatch unit of its base unit, such as
- * Bytes for {@code bytes}. With no base unit, a distribution summary publishes as Count and a gauge
- * as None. Long task timers, function counters, function timers and time gauges are not published.
+ * finite. A gauge or distribution summary with base unit {@code bytes} publishes as Bytes, and with
+ * any other base unit as None. With no base unit, a distribution summary publishes as Count and a
+ * gauge as None. Long task timers, function counters, function timers and time gauges are not
+ * published.
  * A meter that fails to publish is logged and the rest are still published.
  */
 @Slf4j
@@ -51,13 +52,13 @@ public class EmfMeterRegistry extends StepMeterRegistry {
    */
   public EmfMeterRegistry(
       String namespace, Duration step, Clock clock, Supplier<MetricsLogger> metricsLoggers) {
-    super(stepsOf(step), clock);
+    super(stepRegistryConfig(step), clock);
     this.step = step;
     this.namespace = namespace;
     this.metricsLoggers = metricsLoggers;
   }
 
-  private static StepRegistryConfig stepsOf(Duration step) {
+  private static StepRegistryConfig stepRegistryConfig(Duration step) {
     return new StepRegistryConfig() {
       @Override
       public String prefix() {

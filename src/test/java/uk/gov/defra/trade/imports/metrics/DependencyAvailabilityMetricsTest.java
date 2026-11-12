@@ -37,6 +37,14 @@ class DependencyAvailabilityMetricsTest {
   }
 
   @Test
+  void gauge_shouldBeOne_whenASuccessFollowsAFailure() {
+    outcomes.recordFailure("mdm");
+    outcomes.recordSuccess("mdm");
+
+    assertThat(gauge("mdm").value()).isEqualTo(1);
+  }
+
+  @Test
   void gauge_isZeroAfterAFailedCall_andLeavesTheOtherDependencyAlone() {
     outcomes.recordSuccess("mdm");
     outcomes.recordFailure("mdm");

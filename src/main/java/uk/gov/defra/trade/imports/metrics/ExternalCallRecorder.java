@@ -15,7 +15,9 @@ import org.springframework.stereotype.Component;
  * Records each call to a dependency as the timer {@code external.call.duration} and the
  * distribution summary {@code external.call.failure} (1 for a failure, 0 for a success), both
  * tagged {@code dependency} and {@code operation}, and logs it with the ECS {@code event.*} fields.
- * A failure's line also carries the ECS {@code error.type} and {@code error.message} fields.
+ * A call that threw logs the throwable with the ECS {@code error.type} and {@code error.message}
+ * fields; a call the dependency answered with an error status logs {@code
+ * http.response.status_code}.
  */
 @Slf4j
 @Component
@@ -27,32 +29,56 @@ public class ExternalCallRecorder {
   /**
    * Records a call that succeeded.
    *
-   * @param dependency the system called
-   * @param operation what was asked of it, from a fixed set
+   * @param call the call made
    * @param elapsed how long the call took
    */
-  public void recordSuccess(String dependency, String operation, Duration elapsed) {
-    recordMeters(dependency, operation, elapsed, 0);
-    logCall(Level.INFO, dependency + "/" + operation, "success", elapsed, null);
+  public void recordSuccess(ExternalCall call, Duration elapsed) {
+    recordMeters(call, elapsed, 0);
+    callLine(Level.INFO, call, "success", elapsed)
+        .log("External call {} success in {} ms", actionOf(call), elapsed.toMillis());
   }
 
   /**
-   * Records a call that failed.
+   * Records a call that threw.
    *
-   * @param dependency the system called
-   * @param operation what was asked of it, from a fixed set
+   * @param call the call made
    * @param elapsed how long the call took
-   * @param cause why it failed
+   * @param cause what it threw
    */
-  public void recordFailure(
-      String dependency, String operation, Duration elapsed, Throwable cause) {
-    recordMeters(dependency, operation, elapsed, 1);
-    logCall(Level.WARN, dependency + "/" + operation, "failure", elapsed, cause);
+  public void recordFailure(ExternalCall call, Duration elapsed, Throwable cause) {
+    recordMeters(call, elapsed, 1);
+    callLine(Level.WARN, call, "failure", elapsed)
+        .addKeyValue("error.type", cause.getClass().getName())
+        .addKeyValue("error.message", cause.getMessage())
+        .setCause(cause)
+        .log("External call {} failure in {} ms", actionOf(call), elapsed.toMillis());
   }
 
-  private void recordMeters(String dependency, String operation, Duration elapsed, int failure) {
+  /**
+   * Records a call the dependency answered with an error status.
+   *
+   * @param call the call made
+   * @param elapsed how long the call took
+   * @param status the HTTP status the dependency answered with
+   */
+  public void recordFailure(ExternalCall call, Duration elapsed, int status) {
+    recordMeters(call, elapsed, 1);
+    callLine(Level.WARN, call, "failure", elapsed)
+        .addKeyValue("http.response.status_code", status)
+        .log(
+            "External call {} failure in {} ms with status {}",
+            actionOf(call),
+            elapsed.toMillis(),
+            status);
+  }
+
+  private void recordMeters(ExternalCall call, Duration elapsed, int failure) {
     Tags tags =
-        Tags.of(MetricNames.DEPENDENCY_TAG, dependency, MetricNames.OPERATION_TAG, operation);
+        Tags.of(
+            MetricNames.DEPENDENCY_TAG,
+            call.dependency(),
+            MetricNames.OPERATION_TAG,
+            call.operation());
     Timer.builder(MetricNames.EXTERNAL_CALL_DURATION)
         .tags(tags)
         .register(meterRegistry)
@@ -63,18 +89,16 @@ public class ExternalCallRecorder {
         .record(failure);
   }
 
-  private static void logCall(
-      Level level, String action, String outcome, Duration elapsed, Throwable cause) {
-    LoggingEventBuilder line =
-        log.atLevel(level)
-            .addKeyValue("event.category", "external-call")
-            .addKeyValue("event.action", action)
-            .addKeyValue("event.outcome", outcome)
-            .addKeyValue("event.duration", elapsed.toNanos());
-    if (cause != null) {
-      line.addKeyValue("error.type", cause.getClass().getName())
-          .addKeyValue("error.message", cause.getMessage());
-    }
-    line.log("External call {} {} in {} ms", action, outcome, elapsed.toMillis());
+  private static LoggingEventBuilder callLine(
+      Level level, ExternalCall call, String outcome, Duration elapsed) {
+    return log.atLevel(level)
+        .addKeyValue("event.category", "external-call")
+        .addKeyValue("event.action", actionOf(call))
+        .addKeyValue("event.outcome", outcome)
+        .addKeyValue("event.duration", elapsed.toNanos());
+  }
+
+  private static String actionOf(ExternalCall call) {
+    return call.dependency() + "/" + call.operation();
   }
 }

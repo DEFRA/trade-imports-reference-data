@@ -10,9 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
- * Counts each lookup in a cache as {@code cache.hit} or {@code cache.miss}, tagged {@code cache}
- * with the cache's name. A Caffeine cache built with {@code recordStats(statsCounterFor(name))}
- * counts its own lookups, so a lookup through {@code @Cacheable} is counted too.
+ * Gives each cache a Caffeine stats counter that counts each read of the cache as {@code
+ * cache.hit} or {@code cache.miss}, tagged {@code cache} with the cache's name, and keeps
+ * Caffeine's own statistics.
  */
 @Component
 @RequiredArgsConstructor

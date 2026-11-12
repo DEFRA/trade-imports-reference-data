@@ -81,7 +81,6 @@ management:
     mongo:
       enabled: false
   metrics:
-    enabled: ${METRICS_ENABLED:true}
     enable:
       all: false
       controller: true

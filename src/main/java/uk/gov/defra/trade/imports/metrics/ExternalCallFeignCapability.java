@@ -18,8 +18,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
- * Times every Feign call the service makes to a dependency and records it: a response of 400 or
- * over, or an exception, is a failure.
+ * Times each Feign call mapped in {@link #CALLS_BY_CLIENT_METHOD} and records it: a response of
+ * 400 or over, or an exception, is a failure. Any other call passes through unmeasured.
  */
 @Component
 @RequiredArgsConstructor
@@ -60,21 +60,18 @@ public class ExternalCallFeignCapability implements Capability {
     try {
       response = feignCall.execute();
     } catch (IOException | RuntimeException e) {
-      recordFailure(call, elapsedSince(startedAt), e);
+      externalCallRecorder.recordFailure(call, elapsedSince(startedAt), e);
+      lastCallOutcomes.recordFailure(call.dependency());
       throw e;
     }
     if (response.status() >= HTTP_BAD_REQUEST) {
-      recordFailure(call, elapsedSince(startedAt), null);
+      externalCallRecorder.recordFailure(call, elapsedSince(startedAt), response.status());
+      lastCallOutcomes.recordFailure(call.dependency());
     } else {
-      externalCallRecorder.recordSuccess(call.dependency(), call.operation(), elapsedSince(startedAt));
+      externalCallRecorder.recordSuccess(call, elapsedSince(startedAt));
       lastCallOutcomes.recordSuccess(call.dependency());
     }
     return response;
-  }
-
-  private void recordFailure(ExternalCall call, Duration elapsed, Throwable cause) {
-    externalCallRecorder.recordFailure(call.dependency(), call.operation(), elapsed, cause);
-    lastCallOutcomes.recordFailure(call.dependency());
   }
 
   private static Duration elapsedSince(long startedAt) {

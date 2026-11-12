@@ -6,8 +6,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Registers the gauge {@code external.dependency.available}, tagged {@code dependency}, for each
- * dependency: 1 after its most recent call succeeded, 0 after it failed, and NaN, so not published,
- * until it has been called.
+ * dependency: 1 after its most recent call succeeded, 0 after it failed, and NaN until it
+ * has been called.
  */
 @Component
 public class DependencyAvailabilityMetrics {

@@ -1,10 +1,14 @@
 package uk.gov.defra.trade.imports.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.loggedBy;
 import static uk.gov.defra.trade.imports.testsupport.EmfDocuments.dimensionSetsOf;
 import static uk.gov.defra.trade.imports.testsupport.EmfDocuments.namespaceOf;
 import static uk.gov.defra.trade.imports.testsupport.EmfDocuments.unitOf;
+import static uk.gov.defra.trade.imports.testsupport.EmfDocuments.valuesOf;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -144,29 +148,47 @@ class EmfMeterRegistryTest {
   }
 
   @Test
-  void publish_splitsMoreThan100ValuesAcrossDocuments() {
+  void publish_writesADistributionSummaryWithNoUnit_whenItsBaseUnitIsNotBytes() {
+    DistributionSummary.builder("pool.connections")
+        .baseUnit("connections")
+        .register(registry)
+        .record(3);
+
+    registry.publish();
+
+    assertThat(unitOf(onlyDocumentFor("pool.connections"))).isEqualTo("None");
+  }
+
+  @Test
+  void publish_writesEveryRecordedValue_whenMoreThan100AreRecorded() {
     Timer timer = Timer.builder("external.call.duration").register(registry);
     IntStream.rangeClosed(1, 150).forEach(each -> timer.record(Duration.ofMillis(each)));
 
     registry.publish();
 
-    List<JsonNode> documents = emf.documentsFor("external.call.duration");
-    assertThat(documents).hasSize(2);
     List<Double> published = new ArrayList<>();
-    documents.forEach(document -> published.addAll(valuesOf(document, "external.call.duration")));
-    assertThat(published).hasSize(150);
+    emf.documentsFor("external.call.duration")
+        .forEach(document -> published.addAll(valuesOf(document, "external.call.duration")));
+    assertThat(published)
+        .containsExactlyElementsOf(
+            IntStream.rangeClosed(1, 150).mapToObj(each -> (double) each).toList());
   }
 
   @Test
-  void publish_stillWritesTheOtherMeters_whenOneCannotBePublished() {
+  void publish_stillWritesTheOtherMetersAndLogsAWarning_whenOneCannotBePublished() {
     Counter.builder("bad.dimension").tag("action", " ").register(registry).increment();
     Timer.builder("service.create.time").register(registry).record(Duration.ofMillis(4));
     clock.add(STEP);
 
-    registry.publish();
+    List<ILoggingEvent> lines = loggedBy(EmfMeterRegistry.class, registry::publish);
 
     assertThat(emf.documentsFor("bad.dimension")).isEmpty();
     assertThat(emf.documentsFor("service.create.time")).hasSize(1);
+    assertThat(lines).hasSize(1);
+    assertThat(lines.getFirst().getLevel()).isEqualTo(Level.WARN);
+    assertThat(lines.getFirst().getFormattedMessage())
+        .isEqualTo("Could not publish meter bad.dimension");
+    assertThat(lines.getFirst().getThrowableProxy()).isNotNull();
   }
 
   @Test
@@ -193,15 +215,5 @@ class EmfMeterRegistryTest {
     List<JsonNode> documents = emf.documentsFor(metricName);
     assertThat(documents).hasSize(1);
     return documents.getFirst();
-  }
-
-  private static List<Double> valuesOf(JsonNode document, String metricName) {
-    JsonNode values = document.path(metricName);
-    if (!values.isArray()) {
-      return List.of(values.asDouble());
-    }
-    List<Double> doubles = new ArrayList<>();
-    values.forEach(value -> doubles.add(value.asDouble()));
-    return doubles;
   }
 }
