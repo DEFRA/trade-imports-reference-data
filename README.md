@@ -17,9 +17,9 @@ trade-imports-animals service including this one) is the workspace stack in
 
 ```bash
 # from the workspace root
-./scripts/stack/run-stack.sh                  # full stack from published images
-./scripts/stack/run-stack.sh -e reference-data # everything except this service (run it from your IDE)
-tim docker down                               # tear down and wipe volumes
+tim docker up                    # full stack from published images
+tim docker up -e reference-data  # everything except this service (run it from your IDE)
+tim docker down                  # tear down and wipe volumes
 ```
 
 ### MongoDB
@@ -30,7 +30,7 @@ Run the workspace stack's infrastructure tiers (MongoDB, Floci, Redis):
 
 ```bash
 # from the workspace root
-./scripts/stack/run-stack.sh --profile database --profile infrastructure
+tim docker up --profile database --profile infrastructure
 ```
 
 #### MongoDB locally
