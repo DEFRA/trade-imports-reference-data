@@ -19,7 +19,7 @@ trade-imports-animals service including this one) is the workspace stack in
 # from the workspace root
 ./scripts/stack/run-stack.sh                  # full stack from published images
 ./scripts/stack/run-stack.sh -e reference-data # everything except this service (run it from your IDE)
-./scripts/stack/stop-stack.sh                 # tear down and wipe volumes
+tim docker down                               # tear down and wipe volumes
 ```
 
 ### MongoDB
