@@ -1,9 +1,11 @@
 package uk.gov.defra.trade.imports.metrics;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import software.amazon.cloudwatchlogs.emf.model.Unit;
 
+/** Counts each lookup the service is asked for as {@code lookup}, tagged {@code lookup.type}. */
 @Component
 @RequiredArgsConstructor
 public class LookupMetrics {
@@ -12,12 +14,13 @@ public class LookupMetrics {
   public static final String PORTS_OF_ENTRY = "ports-of-entry";
   public static final String COMMODITY_SEARCH = "commodity-search";
   public static final String SPECIES_CHECK = "species-check";
-  static final String LOOKUP_METRIC = "Lookup";
-  static final String LOOKUP_TYPE_DIMENSION = "LookupType";
 
-  private final EmfMetricWriter emfMetricWriter;
+  private final MeterRegistry meterRegistry;
 
   public void recordLookup(String lookupType) {
-    emfMetricWriter.write(LOOKUP_METRIC, 1, Unit.COUNT, LOOKUP_TYPE_DIMENSION, lookupType);
+    Counter.builder(MetricNames.LOOKUP)
+        .tag(MetricNames.LOOKUP_TYPE_TAG, lookupType)
+        .register(meterRegistry)
+        .increment();
   }
 }
