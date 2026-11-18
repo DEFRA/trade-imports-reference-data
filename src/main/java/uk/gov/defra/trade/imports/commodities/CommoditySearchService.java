@@ -3,6 +3,7 @@ package uk.gov.defra.trade.imports.commodities;
 import static uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType.COMMODITY;
 import static uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType.SPECIES;
 
+import io.micrometer.core.annotation.Timed;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,6 +30,7 @@ public class CommoditySearchService {
 
   private final MdmService mdmService;
 
+  @Timed("service.searchCommodities.time")
   public CommoditySearchResponse search(String searchTerm, int page, int size) {
     String trimmedSearchTerm = searchTerm == null ? "" : searchTerm.trim();
     if (trimmedSearchTerm.length() < MINIMUM_SEARCH_LENGTH) {

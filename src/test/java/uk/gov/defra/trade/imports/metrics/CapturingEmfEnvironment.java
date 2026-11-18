@@ -2,7 +2,6 @@ package uk.gov.defra.trade.imports.metrics;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -10,36 +9,22 @@ import software.amazon.cloudwatchlogs.emf.environment.Environment;
 import software.amazon.cloudwatchlogs.emf.logger.MetricsLogger;
 import software.amazon.cloudwatchlogs.emf.model.MetricsContext;
 import software.amazon.cloudwatchlogs.emf.sinks.ISink;
+import uk.gov.defra.trade.imports.testsupport.EmfDocuments;
 
 public class CapturingEmfEnvironment implements Environment {
 
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
   private final List<String> serialised = new ArrayList<>();
-  private final boolean failing;
 
-  public CapturingEmfEnvironment() {
-    this(false);
-  }
-
-  public CapturingEmfEnvironment(boolean failing) {
-    this.failing = failing;
-  }
-
-  public EmfMetricWriter writer() {
-    return new EmfMetricWriter(true, "trade-imports-reference-data", () -> new MetricsLogger(this));
+  public MetricsLogger metricsLogger() {
+    return new MetricsLogger(this);
   }
 
   public List<JsonNode> documents() {
-    return serialised.stream().map(CapturingEmfEnvironment::parse).toList();
+    return serialised.stream().map(EmfDocuments::parse).toList();
   }
 
-  private static JsonNode parse(String document) {
-    try {
-      return OBJECT_MAPPER.readTree(document);
-    } catch (JsonProcessingException e) {
-      throw new IllegalStateException(e);
-    }
+  public List<JsonNode> documentsFor(String metricName) {
+    return EmfDocuments.documentsFor(documents(), metricName);
   }
 
   @Override
@@ -64,7 +49,7 @@ public class CapturingEmfEnvironment implements Environment {
 
   @Override
   public void configureContext(MetricsContext context) {
-    // Adds no environment properties to the context.
+    // Adds no environment properties.
   }
 
   @Override
@@ -72,9 +57,6 @@ public class CapturingEmfEnvironment implements Environment {
     return new ISink() {
       @Override
       public void accept(MetricsContext context) {
-        if (failing) {
-          throw new IllegalStateException("sink unavailable");
-        }
         try {
           serialised.addAll(context.serialize());
         } catch (JsonProcessingException e) {

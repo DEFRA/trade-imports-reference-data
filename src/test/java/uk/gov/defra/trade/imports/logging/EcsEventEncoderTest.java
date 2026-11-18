@@ -1,6 +1,7 @@
 package uk.gov.defra.trade.imports.logging;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.loggedBy;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -15,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 
 class EcsEventEncoderTest {
 
@@ -185,10 +185,7 @@ class EcsEventEncoderTest {
   }
 
   private static ILoggingEvent logged(Consumer<Logger> logging) {
-    try (var logs = CapturingLogAppender.attachedTo(EcsEventEncoderTest.class)) {
-      logging.accept(LOG);
-      return logs.events().getFirst();
-    }
+    return loggedBy(EcsEventEncoderTest.class, () -> logging.accept(LOG)).getFirst();
   }
 
   private JsonNode encode(ILoggingEvent event) throws IOException {

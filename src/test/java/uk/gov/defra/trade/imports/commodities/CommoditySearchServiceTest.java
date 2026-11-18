@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static uk.gov.defra.trade.imports.testsupport.CapturedLogs.loggedBy;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import java.util.List;
@@ -22,7 +23,6 @@ import uk.gov.defra.trade.imports.client.MdmProductSearchResult.ResultType;
 import uk.gov.defra.trade.imports.client.MdmService;
 import uk.gov.defra.trade.imports.client.MdmSpecies;
 import uk.gov.defra.trade.imports.configuration.MdmConfiguration;
-import uk.gov.defra.trade.imports.metrics.CapturingLogAppender;
 
 @ExtendWith(MockitoExtension.class)
 class CommoditySearchServiceTest {
@@ -192,13 +192,11 @@ class CommoditySearchServiceTest {
             MdmSpecies.builder().latinName("Bubalus").build())));
     givenMdmCommodities(commodity("0102", false));
 
-    try (var logs = CapturingLogAppender.attachedTo(CommoditySearchService.class)) {
-      service.search("bos", 0, 1);
+    var events = loggedBy(CommoditySearchService.class, () -> service.search("bos", 0, 1));
 
-      assertThat(logs.events()).extracting(ILoggingEvent::getFormattedMessage).containsExactly(
-          "Commodity search for 'bos' leaves out 1 MDM rows with no code, 1 species with no "
-              + "Latin name and 1 species beyond the page size");
-    }
+    assertThat(events).extracting(ILoggingEvent::getFormattedMessage).containsExactly(
+        "Commodity search for 'bos' leaves out 1 MDM rows with no code, 1 species with no "
+            + "Latin name and 1 species beyond the page size");
   }
 
   @Test
