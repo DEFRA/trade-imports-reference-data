@@ -1,8 +1,12 @@
 # trade-imports-reference-data
 
-Core delivery Java Spring Boot backend template.
+Spring Boot service that serves countries, ports of entry and commodity
+reference data from MDM: `GET /countries`, `GET /ports-of-entry`,
+`GET /commodities` and `POST /commodities/species-check`. It listens on port
+8086.
 
-* [Install MongoDB](#install-mongodb)
+* [Local stack](#local-stack)
+* [MongoDB](#mongodb)
 * [Inspect MongoDB](#inspect-mongodb)
 * [Testing](#testing)
 * [Running](#running)
@@ -12,8 +16,8 @@ Core delivery Java Spring Boot backend template.
 ### Local stack
 
 The full local environment (MongoDB, Floci, Redis, the stubs, and every
-trade-imports-animals service including this one) is the workspace stack in
-[DEFRA/trade-imports-animals-workspace](https://github.com/DEFRA/trade-imports-animals-workspace):
+trade-imports service including this one) is the workspace stack in
+[DEFRA/trade-imports-workspace](https://github.com/DEFRA/trade-imports-workspace):
 
 ```bash
 # from the workspace root
@@ -26,7 +30,8 @@ tim docker down                  # tear down and wipe volumes
 
 #### MongoDB via Docker
 
-Run the workspace stack's infrastructure tiers (MongoDB, Floci, Redis):
+Run the workspace stack's infrastructure tiers (MongoDB, Floci, Redis and
+`cdp-uploader`):
 
 ```bash
 # from the workspace root
@@ -46,7 +51,7 @@ sudo mongod --dbpath ~/mongodb-cdp
 #### MongoDB in CDP environments
 
 In CDP environments a MongoDB instance is already set up
-and the credentials exposed as enviromment variables.
+and the credentials exposed as environment variables.
 
 
 ### Inspect MongoDB
@@ -60,13 +65,19 @@ You can use the CDP Terminal to access the environments' MongoDB.
 
 ### Testing
 
-Run the tests with:
-
-Tests run by running a full Spring Boot application backed by [Testcontainers](https://testcontainers.com/).
-Tests do not use mocking of any sort and read and write from the containerized database.
+Unit tests (`*Test.java`) run with Surefire:
 
 ```bash
 mvn test
+```
+
+Integration tests (`*IT.java`) start the full Spring Boot application with
+[Testcontainers](https://testcontainers.com/): MongoDB, and MockServer standing
+in for MDM and the Trade Platform token endpoint. They need Docker. Failsafe
+runs them after the unit tests, then Checkstyle runs:
+
+```bash
+mvn verify
 ```
 
 ### Running
@@ -75,6 +86,10 @@ Run the application:
 ```bash
 mvn spring-boot:run
 ```
+
+By default it calls MDM and the Trade Platform token endpoint on
+`http://localhost:8087`, where `trade-imports-stub` listens. Set
+`MDM_SERVICE_URL` and `TRADE_PLATFORM_AUTH_URL` to call something else.
 
 ### Ports of entry
 
@@ -101,12 +116,14 @@ MDM `/search` returns two `resultType`s on one page. A species row is one specie
 
 ### SonarCloud
 
-Example SonarCloud configuration are available in the GitHub Action workflows.
+The SonarCloud scan is
+[.github/workflows/sonarcloud.yml](.github/workflows/sonarcloud.yml). It runs
+on every pull request and on every merge to `main`.
 
 ### Dependabot
 
-We have added an example dependabot configuration file to the repository. You can enable it by renaming
-the [.github/example.dependabot.yml](.github/dependabot.yml) to `.github/dependabot.yml`
+[.github/dependabot.yml](.github/dependabot.yml) proposes updates to direct
+Maven dependencies and GitHub Actions every Monday.
 
 
 ### About the licence
