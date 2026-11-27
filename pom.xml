@@ -23,10 +23,10 @@
     <maven.compiler.source>25</maven.compiler.source>
     <maven.compiler.target>25</maven.compiler.target>
     <jjwt.version>0.13.0</jjwt.version>
-    <amazon.awssdk.version>2.40.2</amazon.awssdk.version>
+    <amazon.awssdk.version>2.59.8</amazon.awssdk.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonar.organization>defra</sonar.organization>
-    <testcontainers.version>2.0.2</testcontainers.version>
+    <testcontainers.version>2.0.5</testcontainers.version>
   </properties>
 
   <dependencyManagement>
@@ -82,20 +82,20 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.42</version>
+      <version>1.18.48</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents.client5</groupId>
       <artifactId>httpclient5</artifactId>
-      <version>5.5.1</version>
+      <version>5.6.5</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
-      <version>1.68</version>
+      <version>1.70</version>
       <scope>test</scope>
     </dependency>
 
@@ -107,14 +107,14 @@
     <dependency>
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-      <version>2.8.9</version>
+      <version>2.10.1</version>
     </dependency>
 
     <!-- Logging: ECS Format -->
     <dependency>
       <groupId>co.elastic.logging</groupId>
       <artifactId>logback-ecs-encoder</artifactId>
-      <version>1.6.0</version>
+      <version>1.8.0</version>
     </dependency>
 
     <!-- AWS Embedded Metrics for CloudWatch -->
@@ -133,7 +133,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.15.0</version>
+      <version>2.23.0</version>
     </dependency>
 
     <dependency>
@@ -170,7 +170,7 @@
     <dependency>
       <groupId>com.nimbusds</groupId>
       <artifactId>nimbus-jose-jwt</artifactId>
-      <version>10.6</version>
+      <version>10.10</version>
     </dependency>
 
     <!-- Testing -->
@@ -241,7 +241,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.13</version>
+        <version>0.8.16</version>
         <executions>
           <execution>
             <goals>
@@ -281,7 +281,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.13.0</version>
+        <version>3.16.0</version>
         <configuration>
           <source>25</source>
           <target>25</target>
@@ -289,7 +289,7 @@
             <path>
               <groupId>org.projectlombok</groupId>
               <artifactId>lombok</artifactId>
-              <version>1.18.42</version>
+              <version>1.18.48</version>
             </path>
           </annotationProcessorPaths>
           <compilerArgs>
@@ -301,7 +301,7 @@
       <plugin>
         <groupId>org.sonarsource.scanner.maven</groupId>
         <artifactId>sonar-maven-plugin</artifactId>
-        <version>5.1.0.4751</version>
+        <version>5.9.0.7382</version>
       </plugin>
 
       <plugin>
